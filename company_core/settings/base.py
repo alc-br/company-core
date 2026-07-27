@@ -57,15 +57,12 @@ THIRD_PARTY_APPS = [
     "waffle",
     # Storage
     "storages",
-    # Health Checks
-    "health_check",
-    "health_check.db",
-    "health_check.cache",
-    "health_check.storage",
+    # Health Checks (custom views in apps.health instead of django-health-check)
 ]
 
 # Company Core Apps (registered in dependency order)
 COMPANY_CORE_APPS = [
+    "apps.users",
     "apps.common",
     "apps.core",
     "apps.settings",
@@ -90,6 +87,7 @@ COMPANY_CORE_APPS = [
     "apps.health",
     "apps.search",
     "apps.admin_ext",
+    "apps.web",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + COMPANY_CORE_APPS
@@ -98,6 +96,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + COMPANY_CORE_APPS
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -153,7 +152,7 @@ TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
         "DIRS": [BASE_DIR / "templates"],
-        "APP_DIRS": not DEBUG,
+        "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
                 "django.template.context_processors.debug",
@@ -168,13 +167,6 @@ TEMPLATES = [
         },
     },
 ]
-
-if DEBUG:
-    TEMPLATES[0]["APP_DIRS"] = True
-    TEMPLATES[0]["OPTIONS"]["loaders"] = [
-        "django.template.loaders.filesystem.Loader",
-        "django.template.loaders.app_directories.Loader",
-    ]
 
 # ─── Static Files ─────────────────────────────────────────────
 STATIC_URL = f"{URL_PREFIX}/static/"
@@ -200,7 +192,7 @@ AUTHENTICATION_BACKENDS = [
 ]
 
 # ─── allauth ──────────────────────────────────────────────────
-ACCOUNT_ADAPTER = "allauth.account.adapter.DefaultAccountAdapter"
+ACCOUNT_ADAPTER = "apps.users.adapter.EmailAsUsernameAdapter"
 ACCOUNT_AUTHENTICATION_METHOD = "email"
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = env("ACCOUNT_EMAIL_VERIFICATION", default="none")
@@ -297,8 +289,6 @@ CELERY_TASK_ROUTES = {
 
 # ─── Waffle (Feature Flags) ──────────────────────────────────
 WAFFLE_FLAG_MODEL = "feature_flags.FeatureFlag"
-WAFFLE_SWITCH_MODEL = "feature_flags.FeatureSwitch"
-WAFFLE_SAMPLE_MODEL = "feature_flags.FeatureSample"
 WAFFLE_OVERRIDE = env.bool("WAFFLE_OVERRIDE", default=True)
 
 # ─── Storage (S3 Compatible) ─────────────────────────────────

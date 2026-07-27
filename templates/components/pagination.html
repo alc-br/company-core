@@ -1,0 +1,13 @@
+{% if page_obj.has_other_pages %}
+<div class="join justify-center mt-4">
+    {% if page_obj.has_previous %}
+    <a href="?page=1" class="join-item btn btn-sm">«</a>
+    <a href="?page={{ page_obj.previous_page_number }}" class="join-item btn btn-sm">‹</a>
+    {% endif %}
+    <button class="join-item btn btn-sm btn-active">{{ page_obj.number }}/{{ page_obj.paginator.num_pages }}</button>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}" class="join-item btn btn-sm">›</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}" class="join-item btn btn-sm">»</a>
+    {% endif %}
+</div>
+{% endif %}

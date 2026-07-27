@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Feature Flags{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Feature Flags</h1>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Código</th><th>Nome</th><th>Ativo</th><th>Criado em</th></tr></thead>
+    <tbody>{% for flag in flags %}<tr><td><code>{{ flag.code }}</code></td><td>{{ flag.name }}</td><td><span class="badge badge-{{ 'success' if flag.is_active else 'ghost' }}">{{ "ON" if flag.is_active else "OFF" }}</span></td><td class="text-xs">{{ flag.created_at|date:"d/m/Y" }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center opacity-50">Nenhuma feature flag</td></tr>{% endfor %}</tbody></table>
+</div>
+{% endblock %}

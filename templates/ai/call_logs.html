@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Logs IA{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Logs de Chamadas IA</h1>
+{% if logs %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-sm">
+        <thead><tr><th>Provedor</th><th>Modelo</th><th>Tokens In</th><th>Tokens Out</th><th>Custo</th><th>Latência</th><th>Data</th></tr></thead>
+        <tbody>
+            {% for log in logs %}
+            <tr>
+                <td>{{ log.provider_name }}</td>
+                <td>{{ log.model }}</td>
+                <td>{{ log.tokens_input }}</td>
+                <td>{{ log.tokens_output }}</td>
+                <td>R$ {{ log.cost|floatformat:4 }}</td>
+                <td>{{ log.latency_ms }}ms</td>
+                <td class="text-xs">{{ log.created_at|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60">
+    <p>Nenhum log encontrado</p>
+</div>
+{% endif %}
+{% endblock %}

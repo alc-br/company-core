@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Agentes{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Agentes</h1>
+{% if agents %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Nome</th><th>Modelo</th><th>Temperatura</th><th>Status</th></tr></thead>
+    <tbody>{% for agent in agents %}<tr><td>{{ agent.name }}</td><td>{{ agent.model_id }}</td><td>{{ agent.temperature }}</td><td><span class="badge badge-{{ 'success' if agent.is_active else 'ghost' }}">{{ agent.status|default:"Ativo" if agent.is_active else "Inativo" }}</span></td></tr>{% empty %}<tr><td colspan="4" class="text-center opacity-50">Nenhum agente</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhum agente encontrado</p></div>
+{% endif %}
+{% endblock %}

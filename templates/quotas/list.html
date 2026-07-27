@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Quotas{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Quotas</h1>
+{% if quotas %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Recurso</th><th>Unidade</th><th>Usado</th><th>Limite</th><th>Restante</th><th>Status</th></tr></thead>
+    <tbody>{% for q in quotas %}<tr><td>{{ q.definition.name }}</td><td>{{ q.definition.unit }}</td><td>{{ q.used }}</td><td>{{ q.limit }}</td><td>{{ q.remaining }}</td><td><span class="badge badge-{{ 'success' if not q.is_exceeded else 'error' }}">{{ "OK" if not q.is_exceeded else "Excedido" }}</span></td></tr>{% empty %}<tr><td colspan="6" class="text-center opacity-50">Nenhuma quota</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhuma quota configurada</p></div>
+{% endif %}
+{% endblock %}

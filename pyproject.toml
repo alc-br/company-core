@@ -3,7 +3,7 @@ name = "company-core"
 version = "0.1.0"
 description = "Company Core - Plataforma SaaS multi-tenant construída sobre SaaS Pegasus"
 readme = "README.md"
-requires-python = ">=3.12"
+requires-python = ">=3.12,<3.13"
 license = {text = "MIT"}
 authors = [
     {name = "Company Core Team", email = "team@companycore.dev"},
@@ -11,11 +11,11 @@ authors = [
 
 dependencies = [
     # Django Core
-    "django>=6.0",
+    "django>=5.1,<7.0",
     "django-environ>=0.12",
     "django-extensions>=3.2",
     "psycopg[binary]>=3.2",
-    "pgcli>=4.1",
+
 
     # Authentication (Pegasus - allauth)
     "django-allauth[socialaccount,openid]>=65.0",
@@ -29,7 +29,7 @@ dependencies = [
     "celery[redis]>=5.4",
     "redis>=5.0",
     "django-celery-beat>=2.7",
-    "celery-progress>=0.2",
+    "celery-progress>=0.2",  # May need pip install from source
 
     # Feature Flags (Pegasus - Waffle)
     "django-waffle>=4.2",
@@ -40,7 +40,7 @@ dependencies = [
 
     # Billing - Stripe
     "stripe>=11.0",
-    "dj-stripe>=2.8",
+    # dj-stripe>=2.8,  # Uncomment when Stripe is fully configured
 
     # AI Providers
     "openai>=1.50",
@@ -48,13 +48,9 @@ dependencies = [
     "google-generativeai>=0.8",
 
     # Notifications
-    "django-anymail[mailgun,sendgrid,ses]>=12.0",
-
-    # Webhooks
-    "django-safely>=0.2",
+    # django-anymail>=12.0,  # Uncomment when email providers are configured
 
     # Search
-    "django-haystack>=3.3",
     "whoosh>=2.7",
 
     # Utilities
@@ -65,13 +61,14 @@ dependencies = [
     "Pillow>=10.4",
 
     # Health Checks
-    "django-health-check>=3.18",
+    # Health Checks - Use custom views instead of django-health-check
+    # pip install django-health-check  # Uncomment to install
 
     # Task Queue Management
     "django-celery-results>=2.5",
 
     # API Versioning
-    "drf-nested-routers>=0.94",
+    # drf-nested-routers>=0.94,  # Uncomment if nested routing is needed
 ]
 
 [dependency-groups]
@@ -87,7 +84,7 @@ dev = [
     "types-redis>=4.6",
     "types-requests>=2.32",
     "types-python-dateutil>=2.9",
-    "types-Pillow>=10.4",
+    "types-Pillow>=10.2",
 
     # Testing
     "pytest>=8.3",

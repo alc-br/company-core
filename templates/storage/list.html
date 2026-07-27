@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Armazenamento{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Armazenamento</h1>
+{% if files %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Nome</th><th>Tipo</th><th>Tamanho</th><th>Enviado em</th></tr></thead>
+    <tbody>{% for f in files %}<tr><td>{{ f.original_filename }}</td><td><span class="badge badge-outline badge-sm">{{ f.content_type|default:"-" }}</span></td><td>{{ f.size_bytes|filesizeformat }}</td><td class="text-xs">{{ f.created_at|date:"d/m/Y H:i" }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center opacity-50">Nenhum arquivo</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhum arquivo armazenado</p></div>
+{% endif %}
+{% endblock %}

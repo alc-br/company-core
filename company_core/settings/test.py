@@ -5,6 +5,7 @@ from company_core.settings.base import *  # noqa: F401, F403
 DEBUG = False
 SECRET_KEY = "test-secret-key-for-ci-only"
 DATABASES["default"]["NAME"] = "test_company_core"
+DATABASES["default"]["ENGINE"] = "django.db.backends.sqlite3"
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_BROKER_URL = "memory://"
 CELERY_RESULT_BACKEND = "cache+dummy://"

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Permissões{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Permissões</h1>
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Código</th><th>Nome</th><th>Módulo</th><th>Descrição</th></tr></thead>
+    <tbody>{% for perm in permissions %}<tr><td><code>{{ perm.code }}</code></td><td>{{ perm.name }}</td><td><span class="badge badge-outline">{{ perm.module }}</span></td><td>{{ perm.description }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center opacity-50">Nenhuma permissão</td></tr>{% endfor %}</tbody></table>
+</div>
+{% endblock %}

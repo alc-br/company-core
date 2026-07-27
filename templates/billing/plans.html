@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Planos{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Planos Disponíveis</h1>
+{% if plans %}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {% for plan in plans %}
+    <div class="card bg-base-100 shadow {% if forloop.first %}border-2 border-primary{% endif %}">
+        <div class="card-body">
+            <h2 class="card-title">{{ plan.name }}</h2>
+            <p class="text-3xl font-bold text-primary mt-2">R$ {{ plan.price_cents|floatformat:2 }}</p>
+            <p class="text-sm opacity-70">{{ plan.get_billing_cycle_display }} | {{ plan.description }}</p>
+            <div class="mt-4">
+                <h3 class="font-semibold text-sm mb-2">Funcionalidades</h3>
+                <ul class="list-disc list-inside text-sm">
+                    {% for feature, value in plan.features.items %}
+                    <li>{{ feature }}: {{ value }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card-actions justify-end mt-4">
+                <button class="btn btn-primary btn-sm">Assinar</button>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60">
+    <p class="text-lg">Nenhum plano disponível</p>
+</div>
+{% endif %}
+{% endblock %}

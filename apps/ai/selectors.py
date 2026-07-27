@@ -1,0 +1,1 @@
+# Selectors for ai app

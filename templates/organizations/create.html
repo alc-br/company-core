@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Nova Organização{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Nova Organização</h1>
+<div class="card bg-base-100 shadow max-w-md">
+    <div class="card-body">
+        <form method="POST">
+            {% csrf_token %}
+            <div class="form-control mb-4">
+                <label class="label"><span class="label-text">Nome da Organização</span></label>
+                <input type="text" name="name" class="input input-bordered" placeholder="Ex: Minha Empresa" required autofocus>
+            </div>
+            <button type="submit" class="btn btn-primary w-full">Criar Organização</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

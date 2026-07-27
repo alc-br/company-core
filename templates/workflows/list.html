@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Workflows{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Workflows</h1>
+{% if workflows %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Nome</th><th>Status</th><th>Etapas</th><th>Criado em</th></tr></thead>
+    <tbody>{% for wf in workflows %}<tr><td class="font-medium">{{ wf.name }}</td><td><span class="badge badge-{{ 'success' if wf.is_active else 'ghost' }} badge-sm">{{ "Ativo" if wf.is_active else "Inativo" }}</span></td><td>{{ wf.steps.count }}</td><td class="text-xs">{{ wf.created_at|date:"d/m/Y" }}</td></tr>{% empty %}<tr><td colspan="4" class="text-center opacity-50">Nenhum workflow</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhum workflow encontrado</p></div>
+{% endif %}
+{% endblock %}

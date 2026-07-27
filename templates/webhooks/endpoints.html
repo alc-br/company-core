@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Webhooks{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Endpoints de Webhook</h1>
+{% if endpoints %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>URL</th><th>Eventos</th><th>Status</th></tr></thead>
+    <tbody>{% for ep in endpoints %}<tr><td class="text-sm truncate max-w-48">{{ ep.url }}</td><td>{{ ep.events|length }} eventos</td><td><span class="badge badge-{{ 'success' if ep.is_active else 'ghost' }}">{{ "Ativo" if ep.is_active else "Inativo" }}</span></td></tr>{% empty %}<tr><td colspan="3" class="text-center opacity-50">Nenhum endpoint</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhum endpoint de webhook</p></div>
+{% endif %}
+{% endblock %}

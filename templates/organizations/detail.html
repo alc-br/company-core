@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ organization.name }}{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">{{ organization.name }}</h1>
+    <a href="{% url 'organizations:list' %}" class="btn btn-ghost btn-sm">Voltar</a>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h2 class="card-title">Membros ({{ members|length }})</h2>
+            <table class="table table-sm">
+                <thead><tr><th>Usuário</th><th>Papel</th><th>Status</th></tr></thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>{{ member.user.email }}</td>
+                        <td><span class="badge badge-outline badge-sm">{{ member.get_role_display }}</span></td>
+                        <td><span class="badge badge-success badge-sm">{{ member.get_status_display }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center opacity-50">Nenhum membro</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card bg-base-100 shadow">
+        <div class="card-body">
+            <h2 class="card-title">Convites Pendentes ({{ invitations|length }})</h2>
+            <table class="table table-sm">
+                <thead><tr><th>Email</th><th>Papel</th><th>Expira em</th></tr></thead>
+                <tbody>
+                    {% for inv in invitations %}
+                    <tr>
+                        <td>{{ inv.email }}</td>
+                        <td>{{ inv.get_role_display }}</td>
+                        <td>{{ inv.expires_at|date:"d/m/Y" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center opacity-50">Nenhum convite pendente</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <form method="POST" action="{% url 'organizations:invite' %}" class="mt-4">
+                {% csrf_token %}
+                <input type="hidden" name="organization_id" value="{{ organization.id }}">
+                <div class="flex gap-2">
+                    <input type="email" name="email" class="input input-bordered input-sm flex-1" placeholder="Email do convidado" required>
+                    <button type="submit" class="btn btn-primary btn-sm">Convidar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

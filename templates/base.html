@@ -1,0 +1,52 @@
+{% load static %}
+{% load waffle_tags %}
+<!DOCTYPE html>
+<html lang="pt-br" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Company Core{% endblock %} | Company Core</title>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="min-h-screen bg-base-200">
+    <div class="navbar bg-primary text-primary-content shadow-lg">
+        <div class="navbar-start">
+            <a href="/" class="btn btn-ghost text-xl">Company Core</a>
+        </div>
+        <div class="navbar-center hidden lg:flex">
+            <ul class="menu menu-horizontal px-1">
+                <li><a href="{% url 'dashboard' %}" class="font-semibold">Dashboard</a></li>
+                <li><a href="{% url 'organizations:list' %}">Organizações</a></li>
+                <li><a href="{% url 'billing:plans' %}">Planos</a></li>
+                <li><a href="{% url 'ai:providers' %}">IA</a></li>
+                <li><a href="{% url 'audit:logs' %}">Auditoria</a></li>
+            </ul>
+        </div>
+        <div class="navbar-end gap-2">
+            {% if user.is_authenticated %}
+                <span class="text-sm opacity-80">{{ user.get_display_name }}</span>
+                <a href="{% url 'account_logout' %}" class="btn btn-ghost btn-sm">Sair</a>
+            {% else %}
+                <a href="{% url 'account_login' %}" class="btn btn-ghost">Entrar</a>
+                <a href="{% url 'account_signup' %}" class="btn btn-secondary">Criar Conta</a>
+            {% endif %}
+        </div>
+    </div>
+    <main class="container mx-auto px-4 py-6">
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} mb-2"><span>{{ message }}</span></div>
+            {% endfor %}
+        {% endif %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="footer footer-center p-4 bg-base-300 text-base-content">
+        <p>Company Core &copy; {% now "Y" %}</p>
+    </footer>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

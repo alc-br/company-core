@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Configurações{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Configurações da Organização</h1>
+{% if settings %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Chave</th><th>Valor</th><th>Ambiente</th></tr></thead>
+    <tbody>{% for s in settings %}<tr><td><code>{{ s.key }}</code></td><td>{{ s.value }}</td><td>{{ s.environment }}</td></tr>{% empty %}<tr><td colspan="3" class="text-center opacity-50">Nenhuma configuração</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhuma configuração definida</p></div>
+{% endif %}
+{% endblock %}

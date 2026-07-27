@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Organizações{% endblock %}
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Organizações</h1>
+    <a href="{% url 'organizations:create' %}" class="btn btn-primary btn-sm">Nova Organização</a>
+</div>
+{% if organizations %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table">
+        <thead><tr><th>Nome</th><th>Slug</th><th>Proprietário</th><th>Status</th><th>Ações</th></tr></thead>
+        <tbody>
+            {% for org in organizations %}
+            <tr>
+                <td class="font-medium">{{ org.name }}</td>
+                <td class="text-sm opacity-70">{{ org.slug }}</td>
+                <td>{{ org.owner.get_display_name|default:"-" }}</td>
+                <td><span class="badge badge-success badge-sm">Ativo</span></td>
+                <td><a href="{% url 'organizations:detail' org.id %}" class="btn btn-ghost btn-xs">Ver</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60">
+    <p class="text-lg">Nenhuma organização encontrada</p>
+    <a href="{% url 'organizations:create' %}" class="btn btn-primary btn-sm mt-4">Criar Organização</a>
+</div>
+{% endif %}
+{% endblock %}

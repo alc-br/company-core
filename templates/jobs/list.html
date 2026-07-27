@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Jobs{% endblock %}
+{% block content %}
+<h1 class="text-2xl font-bold mb-6">Jobs</h1>
+{% if jobs %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table table-sm"><thead><tr><th>Nome</th><th>Status</th><th>Início</th><th>Fim</th><th>Duração</th></tr></thead>
+    <tbody>{% for job in jobs %}<tr><td>{{ job.name }}</td><td><span class="badge badge-{{ 'success' if job.status == 'completed' else 'warning' if job.status == 'running' else 'ghost' }} badge-sm">{{ job.status }}</span></td><td class="text-xs">{{ job.started_at|date:"d/m/Y H:i" }}</td><td class="text-xs">{{ job.ended_at|date:"d/m/Y H:i" }}</td><td class="text-xs">{{ job.duration|default:"-" }}</td></tr>{% empty %}<tr><td colspan="5" class="text-center opacity-50">Nenhum job</td></tr>{% endfor %}</tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60"><p>Nenhum job encontrado</p></div>
+{% endif %}
+{% endblock %}
