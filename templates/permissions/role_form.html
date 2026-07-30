@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Papel - {{ object.name }}{% else %}Novo Papel{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'permissions:roles' %}">Papéis</a></li>
+            <li class="active">{% if object %}Editar{% else %}Novo{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Papel{% else %}Novo Papel{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Nome do Papel *</span></label>
+                    {{ form.name.errors }}
+                    <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="input input-bordered" required>
+                </div>
+
+                <div class="form-control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="is_default" {% if form.is_default.value %}checked{% endif %}>
+                        <span>Papel padrão para novos membros</span>
+                    </label>
+                    {{ form.is_default.errors }}
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text font-semibold">Permissões</span></label>
+                    {{ form.permissions.errors }}
+                    <div class="max-h-64 overflow-y-auto border border-base-300 rounded-lg p-4 space-y-2">
+                        {% for checkbox in form.permissions %}
+                        <label class="flex items-center gap-2 cursor-pointer hover:bg-base-200 p-1 rounded">
+                            {{ checkbox.tag }}
+                            <span class="text-sm">{{ checkbox.choice_label }}</span>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'permissions:roles' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

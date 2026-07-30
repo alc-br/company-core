@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Provedor - {{ object.display_name }}{% else %}Novo Provedor IA{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'ai:list' %}">Provedores IA</a></li>
+            <li class="active">{% if object %}Editar{% else %}Novo{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Provedor IA{% else %}Novo Provedor IA{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Provedor *</span></label>
+                        {{ form.provider_name.errors }}
+                        <select name="provider_name" class="select select-bordered">
+                            {% for value, label in form.fields.provider_name.choices %}
+                            <option value="{{ value }}" {% if form.provider_name.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nome de Exibição *</span></label>
+                        {{ form.display_name.errors }}
+                        <input type="text" name="display_name" value="{{ form.display_name.value|default:'' }}" class="input input-bordered" required>
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Modelos Disponíveis (JSON)</span></label>
+                    {{ form.models_list.errors }}
+                    <textarea name="models_list" class="textarea textarea-bordered font-mono text-sm" rows="3">{{ form.models_list.value|default:'{}'|escapejs }}</textarea>
+                    <label class="label"><span class="label-text-alt">JSON com IDs e nomes dos modelos</span></label>
+                </div>
+
+                <div class="form-control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="is_default" {% if form.is_default.value %}checked{% endif %}>
+                        <span>Provedor padrão</span>
+                    </label>
+                    {{ form.is_default.errors }}
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'ai:list' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

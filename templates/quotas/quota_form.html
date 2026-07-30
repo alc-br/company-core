@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Quota - {{ object.name }}{% else %}Nova Definição de Quota{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'quotas:list' %}">Quotas</a></li>
+            <li class="active">{% if object %}Editar{% else %}Nova{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Definição de Quota{% else %}Nova Definição de Quota{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Código *</span></label>
+                        {{ form.code.errors }}
+                        <input type="text" name="code" value="{{ form.code.value|default:'' }}" class="input input-bordered" required {% if object %}readonly{% endif %}>
+                        {% if object %}<label class="label"><span class="label-text-alt">Código não pode ser alterado</span></label>{% endif %}
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nome *</span></label>
+                        {{ form.name.errors }}
+                        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Unidade *</span></label>
+                        {{ form.unit.errors }}
+                        <input type="text" name="unit" value="{{ form.unit.value|default:'' }}" class="input input-bordered" placeholder="Ex: requisições, MB, GB" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Limite Padrão</span></label>
+                        {{ form.default_limit.errors }}
+                        <input type="number" name="default_limit" value="{{ form.default_limit.value|default:'0' }}" class="input input-bordered" min="0">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Descrição</span></label>
+                    {{ form.description.errors }}
+                    <textarea name="description" class="textarea textarea-bordered" rows="2">{{ form.description.value|default:'' }}</textarea>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'quotas:list' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

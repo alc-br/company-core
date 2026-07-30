@@ -9,7 +9,7 @@ from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
 # ─── Environment ────────────────────────────────────────────────
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
 env = environ.Env()
 env.read_env(os.path.join(BASE_DIR, ".env"))
 
@@ -37,7 +37,6 @@ DJANGO_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.humanize",
-    "django.contrib.postgres",
 ]
 
 THIRD_PARTY_APPS = [
@@ -108,26 +107,28 @@ MIDDLEWARE = [
 ]
 
 # ─── Database ─────────────────────────────────────────────────
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", default="company_core"),
-        "USER": env("POSTGRES_USER", default="postgres"),
-        "PASSWORD": env("POSTGRES_PASSWORD", default="postgres"),
-        "HOST": env("POSTGRES_HOST", default="localhost"),
-        "PORT": env("POSTGRES_PORT", default="5432"),
-        "CONN_MAX_AGE": env.int("DB_CONN_MAX_AGE", default=60),
-        "CONN_HEALTH_CHECKS": True,
-        "OPTIONS": {
-            "connect_timeout": 10,
-            "options": "-c statement_timeout=30000",
-        },
-    }
-}
+# Support for file:// (SQLite), postgres://, postgresql:// URLs
+_DATABASE_URL = env("DATABASE_URL", default=None)
 
-DATABASE_URL = env("DATABASE_URL", default=None)
-if DATABASE_URL:
-    DATABASES["default"] = env.db_url("DATABASE_URL")
+if _DATABASE_URL and _DATABASE_URL.startswith(("postgres://", "postgresql://")):
+    DATABASES = {"default": env.db_url("DATABASE_URL")}
+elif _DATABASE_URL and _DATABASE_URL.startswith("file://"):
+    import urllib.parse
+    _parsed = urllib.parse.urlparse(_DATABASE_URL)
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": _parsed.path or BASE_DIR / "db.sqlite3",
+        }
+    }
+else:
+    # Default to SQLite for development
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 # ─── Cache ────────────────────────────────────────────────────
 CACHES = {
@@ -193,14 +194,12 @@ AUTHENTICATION_BACKENDS = [
 
 # ─── allauth ──────────────────────────────────────────────────
 ACCOUNT_ADAPTER = "apps.users.adapter.EmailAsUsernameAdapter"
-ACCOUNT_AUTHENTICATION_METHOD = "email"
-ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_LOGIN_METHODS = {"email"}
+ACCOUNT_SIGNUP_FIELDS = ["email*", "password1*", "password2*"]
 ACCOUNT_EMAIL_VERIFICATION = env("ACCOUNT_EMAIL_VERIFICATION", default="none")
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = True
 ACCOUNT_LOGOUT_ON_PASSWORD_CHANGE = True
 ACCOUNT_SESSION_REMEMBER = True
-ACCOUNT_SIGNUP_EMAIL_ENTER_TWICE = False
-ACCOUNT_USERNAME_REQUIRED = False
 ACCOUNT_EMAIL_SUBJECT_PREFIX = "[Company Core] "
 
 LOGIN_REDIRECT_URL = "/dashboard/"
@@ -288,7 +287,8 @@ CELERY_TASK_ROUTES = {
 }
 
 # ─── Waffle (Feature Flags) ──────────────────────────────────
-WAFFLE_FLAG_MODEL = "feature_flags.FeatureFlag"
+# We use django-waffle's built-in Flag model for template tags ({% flag %}).
+# Our custom FeatureFlag model in apps.feature_flags provides per-org/user assignment.
 WAFFLE_OVERRIDE = env.bool("WAFFLE_OVERRIDE", default=True)
 
 # ─── Storage (S3 Compatible) ─────────────────────────────────

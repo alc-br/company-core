@@ -1,8 +1,10 @@
-from django.urls import path
-from apps.storage import views as storage_views
+"""URL configuration for storage app."""
 
-app_name = "storage"
+from rest_framework.routers import DefaultRouter
+from apps.storage.views import StorageBackendConfigViewSet, StoredObjectViewSet
 
-urlpatterns = [
-    path('', storage_views.list_files, name='list'),
-]
+router = DefaultRouter()
+router.register(r'backends', StorageBackendConfigViewSet, basename='storage-backend')
+router.register(r'objects', StoredObjectViewSet, basename='stored-object')
+
+urlpatterns = router.urls

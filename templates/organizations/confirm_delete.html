@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Confirmar Exclusão - Organização{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'organizations:list' %}">Organizações</a></li>
+            <li><a href="{% url 'organizations:detail' object.id %}">{{ object.name }}</a></li>
+            <li class="active">Excluir</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Confirmar Exclusão</h2>
+            <p>Tem certeza que deseja excluir a organização <strong>{{ object.name }}</strong>?</p>
+            <div class="alert alert-warning mt-4">
+                <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                <span class="text-sm">Esta ação excluirá todos os dados da organização, incluindo membros, assinaturas e configurações.</span>
+            </div>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ cancel_url }}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-error">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

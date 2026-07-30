@@ -85,3 +85,66 @@ def get_user_role(user_id: int, organization_id: int) -> Optional[int]:
         status=MembershipStatus.ACTIVE,
     ).first()
     return membership.role if membership else None
+
+
+def get_organization_list_queryset(
+    *,
+    status: Optional[int] = None,
+    search: Optional[str] = None,
+) -> QuerySet[Organization]:
+    """Get organizations queryset for API list views."""
+    queryset = Organization.objects.select_related("owner")
+
+    if status is not None:
+        queryset = queryset.filter(status=status)
+
+    if search:
+        queryset = queryset.filter(name__icontains=search)
+
+    return queryset
+
+
+def get_membership_queryset(
+    *,
+    organization_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    status: Optional[int] = None,
+    role: Optional[int] = None,
+) -> QuerySet[Membership]:
+    """Get memberships queryset for API views."""
+    queryset = Membership.objects.select_related("user", "organization", "invited_by")
+
+    if organization_id is not None:
+        queryset = queryset.filter(organization_id=organization_id)
+
+    if user_id is not None:
+        queryset = queryset.filter(user_id=user_id)
+
+    if status is not None:
+        queryset = queryset.filter(status=status)
+
+    if role is not None:
+        queryset = queryset.filter(role=role)
+
+    return queryset
+
+
+def get_invitation_queryset(
+    *,
+    organization_id: Optional[int] = None,
+    email: Optional[str] = None,
+    status: Optional[int] = None,
+) -> QuerySet[Invitation]:
+    """Get invitations queryset for API views."""
+    queryset = Invitation.objects.select_related("organization", "invited_by")
+
+    if organization_id is not None:
+        queryset = queryset.filter(organization_id=organization_id)
+
+    if email is not None:
+        queryset = queryset.filter(email=email)
+
+    if status is not None:
+        queryset = queryset.filter(status=status)
+
+    return queryset

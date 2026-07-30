@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Confirmar Exclusão - Provedor IA{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'ai:list' %}">Provedores IA</a></li>
+            <li class="active">Excluir</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Confirmar Exclusão</h2>
+            <p>Tem certeza que deseja excluir o provedor <strong>{{ object.display_name }}</strong>?</p>
+            <p class="text-sm opacity-70 mt-2">Configurações de modelos e logs de chamadas associados também serão excluídos.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="card-actions justify-end mt-4">
+                    <a href="{{ cancel_url }}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-error">Excluir</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Integrações{% endblock %}
+
+{% block content %}
+<div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Integrações</h1>
+    <a href="{% url 'integrations:create' %}" class="btn btn-primary btn-sm">Nova Integração</a>
+</div>
+{% if integrations %}
+<div class="overflow-x-auto bg-base-100 rounded-box shadow">
+    <table class="table"><thead><tr><th>Nome</th><th>Tipo</th><th>Status</th><th>Último Check</th><th>Ações</th></tr></thead>
+    <tbody>
+    {% for integration in integrations %}
+    <tr>
+        <td class="font-medium">{{ integration.name }}</td>
+        <td><code>{{ integration.integration_type }}</code></td>
+        <td><span class="badge badge-{{ 'success' if integration.status == 'active' else 'ghost' }}">{{ integration.status }}</span></td>
+        <td class="text-xs">{{ integration.last_health_check|date:"d/m/Y H:i"|default:"-" }}</td>
+        <td class="flex gap-1">
+            <a href="{% url 'integrations:edit' integration.id %}" class="btn btn-xs btn-ghost">Editar</a>
+            <a href="{% url 'integrations:delete' integration.id %}" class="btn btn-xs btn-error btn-ghost">Excluir</a>
+        </td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="5" class="text-center opacity-50">Nenhuma integração</td></tr>
+    {% endfor %}
+    </tbody></table>
+</div>
+{% else %}
+<div class="flex flex-col items-center py-12 opacity-60">
+    <p>Nenhuma integração configurada</p>
+    <a href="{% url 'integrations:create' %}" class="btn btn-primary btn-sm mt-4">Criar Integração</a>
+</div>
+{% endif %}
+{% endblock %}

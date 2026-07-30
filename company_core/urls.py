@@ -33,6 +33,10 @@ urlpatterns = [
     path(f"{URL_PREFIX}jobs/", include("apps.jobs.urls")),
     path(f"{URL_PREFIX}storage/", include("apps.storage.urls")),
     path(f"{URL_PREFIX}users/", include("apps.users.urls")),
+    path(f"{URL_PREFIX}integrations/", include("apps.integrations.urls")),
+    path(f"{URL_PREFIX}analytics/", include("apps.analytics.urls")),
+    path(f"{URL_PREFIX}search/", include("apps.search.urls")),
+    path(f"{URL_PREFIX}usage/", include("apps.usage.urls")),
 ]
 
 if settings.DEBUG:

@@ -9,6 +9,11 @@ class TestPermissionModel:
 
 
 class TestRoleModel:
-    def test_role_str(self):
-        role = Role(name="Admin")
+    def test_role_str(self, db):
+        from apps.organizations.services import OrganizationService
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        owner = User.objects.create_user(email="owner@example.com", password="pass123")
+        org = OrganizationService.create_organization(name="Test Org", owner=owner)
+        role = Role(name="Admin", organization=org)
         assert "Admin" in str(role)

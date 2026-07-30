@@ -10,7 +10,7 @@ class TestPlanModel:
 
 class TestSubscriptionModel:
     def test_subscription_fields(self):
-        sub = Subscription()
-        assert hasattr(sub, "organization")
-        assert hasattr(sub, "plan")
-        assert hasattr(sub, "status")
+        from django.db.models.fields.related import ForeignKey
+        assert any(f.name == "organization" for f in Subscription._meta.get_fields())
+        assert any(f.name == "plan" for f in Subscription._meta.get_fields())
+        assert any(f.name == "status" for f in Subscription._meta.get_fields())

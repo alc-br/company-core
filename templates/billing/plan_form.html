@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Plano - {{ object.name }}{% else %}Novo Plano{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'billing:plans' %}">Planos</a></li>
+            <li class="active">{% if object %}Editar{% else %}Novo{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Plano{% else %}Novo Plano{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nome *</span></label>
+                        {{ form.name.errors }}
+                        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Preço (centavos) *</span></label>
+                        {{ form.price_cents.errors }}
+                        <input type="number" name="price_cents" value="{{ form.price_cents.value|default:'0' }}" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Ciclo de Cobrança</span></label>
+                        {{ form.billing_cycle.errors }}
+                        <select name="billing_cycle" class="select select-bordered">
+                            {% for value, label in form.fields.billing_cycle.choices %}
+                            <option value="{{ value }}" {% if form.billing_cycle.value|stringformat:"s" == value|stringformat:"s" %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Ordem de Exibição</span></label>
+                        {{ form.display_order.errors }}
+                        <input type="number" name="display_order" value="{{ form.display_order.value|default:'0' }}" class="input input-bordered">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Stripe Price ID</span></label>
+                    {{ form.stripe_price_id.errors }}
+                    <input type="text" name="stripe_price_id" value="{{ form.stripe_price_id.value|default:'' }}" class="input input-bordered">
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Descrição</span></label>
+                    {{ form.description.errors }}
+                    <textarea name="description" class="textarea textarea-bordered" rows="2">{{ form.description.value|default:'' }}</textarea>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Funcionalidades (JSON)</span></label>
+                    {{ form.features.errors }}
+                    <textarea name="features" class="textarea textarea-bordered" rows="3">{{ form.features.value|default:'{}' }}</textarea>
+                    <label class="label"><span class="label-text-alt">JSON com funcionalidades do plano</span></label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Limites (JSON)</span></label>
+                    {{ form.limits.errors }}
+                    <textarea name="limits" class="textarea textarea-bordered" rows="3">{{ form.limits.value|default:'{}' }}</textarea>
+                    <label class="label"><span class="label-text-alt">JSON com limites do plano</span></label>
+                </div>
+
+                <div class="form-control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                        <span>Ativo</span>
+                    </label>
+                    {{ form.is_active.errors }}
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'billing:plans' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

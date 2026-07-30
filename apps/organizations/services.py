@@ -15,13 +15,14 @@ class OrganizationService:
 
     @staticmethod
     @transaction.atomic
-    def create_organization(name: str, owner, slug: Optional[str] = None) -> Organization:
+    def create_organization(name: str, owner, slug: Optional[str] = None, metadata: Optional[dict] = None) -> Organization:
         """Create a new organization with the given owner."""
         organization = Organization.objects.create(
             name=name,
             slug=slug or name.lower().replace(" ", "-"),
             owner=owner,
             status=MembershipStatus.ACTIVE,
+            metadata=metadata or {},
         )
 
         Membership.objects.create(
@@ -37,21 +38,33 @@ class OrganizationService:
 
     @staticmethod
     @transaction.atomic
-    def invite_member(organization: Organization, email: str, role: int, invited_by) -> Invitation:
+    def update_organization(organization: Organization, **kwargs) -> Organization:
+        """Update an organization's fields."""
+        allowed_fields = {"name", "status", "metadata"}
+        for field in allowed_fields:
+            if field in kwargs:
+                setattr(organization, field, kwargs[field])
+        organization.save()
+        logger.info(f"Organization {organization.id} updated")
+        return organization
+
+    @staticmethod
+    @transaction.atomic
+    def invite_member(organization: Organization, email: str, role: int, invited_by, expires_days: int = 7) -> Invitation:
         """Invite a new member to an organization."""
         from datetime import timedelta
 
         if Membership.objects.filter(
             user__email=email, organization=organization, status=MembershipStatus.ACTIVE
         ).exists():
-            raise ValidationError(_("Usuário já é membro desta organização."))
+            raise ValidationError(_("User is already a member of this organization."))
 
         invitation = Invitation.objects.create(
             email=email,
             organization=organization,
             role=role,
             invited_by=invited_by,
-            expires_at=timezone.now() + timedelta(days=7),
+            expires_at=timezone.now() + timedelta(days=expires_days),
             status=InvitationStatus.PENDING,
         )
 
@@ -65,7 +78,7 @@ class OrganizationService:
         if invitation.is_expired:
             invitation.status = InvitationStatus.EXPIRED
             invitation.save()
-            raise ValidationError(_("Convite expirado."))
+            raise ValidationError(_("Invitation has expired."))
 
         invitation.status = InvitationStatus.ACCEPTED
         invitation.accepted_at = timezone.now()
@@ -91,17 +104,26 @@ class OrganizationService:
 
     @staticmethod
     @transaction.atomic
+    def decline_invitation(invitation: Invitation) -> Invitation:
+        """Decline an invitation."""
+        invitation.status = InvitationStatus.DECLINED
+        invitation.save()
+        logger.info(f"Invitation {invitation.token} declined")
+        return invitation
+
+    @staticmethod
+    @transaction.atomic
     def remove_member(organization: Organization, user, removed_by) -> None:
         """Remove a member from an organization."""
         if user == organization.owner:
-            raise PermissionDeniedError(_("Não é possível remover o proprietário da organização."))
+            raise PermissionDeniedError(_("Cannot remove the organization owner."))
 
         membership = Membership.objects.filter(
             user=user, organization=organization, status=MembershipStatus.ACTIVE
         ).first()
 
         if not membership:
-            raise NotFoundException(_("Membro não encontrado."))
+            raise NotFoundException(_("Member not found."))
 
         membership.status = MembershipStatus.INACTIVE
         membership.save()
@@ -109,17 +131,18 @@ class OrganizationService:
         logger.info(f"User {user.id} removed from organization {organization.id} by {removed_by.id}")
 
     @staticmethod
+    @transaction.atomic
     def update_member_role(organization: Organization, user, new_role: int) -> Membership:
         """Update a member's role."""
         if user == organization.owner:
-            raise PermissionDeniedError(_("Não é possível alterar o papel do proprietário."))
+            raise PermissionDeniedError(_("Cannot change the owner's role."))
 
         membership = Membership.objects.filter(
             user=user, organization=organization, status=MembershipStatus.ACTIVE
         ).first()
 
         if not membership:
-            raise NotFoundException(_("Membro não encontrado."))
+            raise NotFoundException(_("Member not found."))
 
         membership.role = new_role
         membership.save()

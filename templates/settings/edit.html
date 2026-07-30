@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Editar Configuração - {{ setting.key }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'settings:view' %}">Configurações</a></li>
+            <li class="active">Editar</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Editar Configuração</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Chave</span></label>
+                    <input type="text" class="input input-bordered bg-base-200" value="{{ setting.key }}" disabled>
+                    <label class="label"><span class="label-text-alt">Identificador único da configuração</span></label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Valor *</span></label>
+                    <textarea name="value" class="textarea textarea-bordered font-mono text-sm" rows="4" required>{{ setting.value }}</textarea>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Ambiente</span></label>
+                    <input type="text" name="environment" value="{{ setting.environment }}" class="input input-bordered" placeholder="production">
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'settings:view' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

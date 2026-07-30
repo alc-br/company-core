@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Template - {{ object.code }}{% else %}Novo Template{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'notifications:list_templates' %}">Templates</a></li>
+            <li class="active">{% if object %}Editar{% else %}Novo{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Template{% else %}Novo Template{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Código *</span></label>
+                        {{ form.code.errors }}
+                        <input type="text" name="code" value="{{ form.code.value|default:'' }}" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Canal</span></label>
+                        {{ form.channel.errors }}
+                        <input type="text" name="channel" value="{{ form.channel.value|default:'email' }}" class="input input-bordered">
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Assunto *</span></label>
+                    {{ form.subject.errors }}
+                    <input type="text" name="subject" value="{{ form.subject.value|default:'' }}" class="input input-bordered" required>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">HTML</span></label>
+                    {{ form.body_html.errors }}
+                    <textarea name="body_html" class="textarea textarea-bordered font-mono text-sm" rows="6">{{ form.body_html.value|default:'' }}</textarea>
+                    <label class="label"><span class="label-text-alt">Use {{ '{{' }}variavel{{ '}}' }} para placeholders</span></label>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Texto (Plain)</span></label>
+                    {{ form.body_text.errors }}
+                    <textarea name="body_text" class="textarea textarea-bordered font-mono text-sm" rows="4">{{ form.body_text.value|default:'' }}</textarea>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'notifications:list_templates' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

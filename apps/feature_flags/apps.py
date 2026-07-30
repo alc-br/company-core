@@ -8,3 +8,4 @@ class FeatureFlagsAppConfig(AppConfig):
 
     def ready(self):
         import apps.feature_flags.signals  # noqa: F401
+        import apps.feature_flags.templatetags.feature_flag_tags  # noqa: F401

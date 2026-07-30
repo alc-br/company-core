@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Editar Organização - {{ organization.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'organizations:list' %}">Organizações</a></li>
+            <li><a href="{% url 'organizations:detail' organization.id %}">{{ organization.name }}</a></li>
+            <li class="active">Editar</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Editar Organização</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Nome da Organização *</span></label>
+                    <input type="text" name="name" value="{{ organization.name }}" class="input input-bordered" required autofocus>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Status</span></label>
+                    <select name="status" class="select select-bordered">
+                        {% for value, label in organization.STATUS_CHOICES %}
+                        <option value="{{ value }}" {% if organization.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Slug</span></label>
+                    <input type="text" class="input input-bordered bg-base-200" value="{{ organization.slug }}" disabled>
+                    <label class="label"><span class="label-text-alt">Identificador único gerado automaticamente</span></label>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'organizations:detail' organization.id %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

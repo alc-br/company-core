@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{% if object %}Editar Agente - {{ object.name }}{% else %}Novo Agente{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'agents:list' %}">Agentes</a></li>
+            <li class="active">{% if object %}Editar{% else %}Novo{% endif %}</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">{% if object %}Editar Agente{% else %}Novo Agente{% endif %}</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nome *</span></label>
+                        {{ form.name.errors }}
+                        <input type="text" name="name" value="{{ form.name.value|default:'' }}" class="input input-bordered" required>
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Modelo</span></label>
+                        {{ form.model_id.errors }}
+                        <input type="text" name="model_id" value="{{ form.model_id.value|default:'gpt-4o' }}" class="input input-bordered" placeholder="gpt-4o">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Temperatura</span></label>
+                        {{ form.temperature.errors }}
+                        <input type="number" name="temperature" value="{{ form.temperature.value|default:'0.7' }}" class="input input-bordered" min="0" max="2" step="0.1">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Provedor IA</span></label>
+                        {{ form.provider.errors }}
+                        <select name="provider" class="select select-bordered">
+                            <option value="">-- Nenhum --</option>
+                            {% for choice in form.provider.field.queryset %}
+                            <option value="{{ choice.pk }}" {% if form.provider.value|stringformat:"s" == choice.pk|stringformat:"s" %}selected{% endif %}>{{ choice.display_name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Descrição</span></label>
+                    {{ form.description.errors }}
+                    <textarea name="description" class="textarea textarea-bordered" rows="2">{{ form.description.value|default:'' }}</textarea>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">System Prompt *</span></label>
+                    {{ form.system_prompt.errors }}
+                    <textarea name="system_prompt" class="textarea textarea-bordered font-mono text-sm" rows="4" required>{{ form.system_prompt.value|default:'' }}</textarea>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Configuração de Memória (JSON)</span></label>
+                    {{ form.memory_config.errors }}
+                    <textarea name="memory_config" class="textarea textarea-bordered font-mono text-sm" rows="3">{{ form.memory_config.value|default:'{}'|escapejs }}</textarea>
+                </div>
+
+                <div class="form-control">
+                    <label class="checkbox">
+                        <input type="checkbox" name="is_active" {% if form.is_active.value %}checked{% endif %}>
+                        <span>Ativo</span>
+                    </label>
+                    {{ form.is_active.errors }}
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'agents:list' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,8 +1,9 @@
-from django.urls import path
-from apps.jobs import views as job_views
+"""URL configuration for jobs app."""
 
-app_name = "jobs"
+from rest_framework.routers import DefaultRouter
+from apps.jobs.views import JobViewSet
 
-urlpatterns = [
-    path('', job_views.list_jobs, name='list'),
-]
+router = DefaultRouter()
+router.register(r'jobs', JobViewSet, basename='job')
+
+urlpatterns = router.urls

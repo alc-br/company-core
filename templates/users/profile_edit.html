@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Editar Perfil{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="breadcrumbs text-sm mb-4">
+        <ul>
+            <li><a href="{% url 'users:profile' %}">Meu Perfil</a></li>
+            <li class="active">Editar</li>
+        </ul>
+    </div>
+
+    <div class="card bg-base-100 shadow-xl">
+        <div class="card-body">
+            <h2 class="card-title text-2xl">Editar Perfil</h2>
+
+            <form method="post" class="space-y-4">
+                {% csrf_token %}
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Nome</span></label>
+                        <input type="text" name="first_name" value="{{ user.first_name }}" class="input input-bordered" placeholder="Nome">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Sobrenome</span></label>
+                        <input type="text" name="last_name" value="{{ user.last_name }}" class="input input-bordered" placeholder="Sobrenome">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Timezone</span></label>
+                        <input type="text" name="timezone" value="{{ user.timezone }}" class="input input-bordered">
+                    </div>
+                    <div class="form-control">
+                        <label class="label"><span class="label-text">Email</span></label>
+                        <input type="email" class="input input-bordered bg-base-200" value="{{ user.email }}" disabled>
+                        <label class="label"><span class="label-text-alt">O email não pode ser alterado aqui</span></label>
+                    </div>
+                </div>
+
+                <div class="form-control">
+                    <label class="label"><span class="label-text">Bio</span></label>
+                    <textarea name="bio" class="textarea textarea-bordered" rows="3">{{ user.bio }}</textarea>
+                </div>
+
+                <div class="card-actions justify-end mt-6">
+                    <a href="{% url 'users:profile' %}" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Salvar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
