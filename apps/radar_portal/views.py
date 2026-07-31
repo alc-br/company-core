@@ -40,8 +40,8 @@ def portal_login(request):
 
     request.session["portal_contact_id"] = contact.id
     return JsonResponse({
-        "contact_id": contact.id, "client_id": contact.client_id, "client_name": contact.client.name,
-        "contact_name": contact.name, "contact_email": contact.email, "contact_phone": contact.phone,
+        "contactId": contact.id, "clientId": contact.client_id, "clientName": contact.client.name,
+        "contactName": contact.name, "contactEmail": contact.email, "contactPhone": contact.phone,
     })
 
 

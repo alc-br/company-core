@@ -13,6 +13,9 @@ class ClientCompanyAdmin(admin.ModelAdmin):
 class ClientContactAdmin(admin.ModelAdmin):
     list_display = ["name", "client", "email", "has_portal_access"]
     search_fields = ["name", "email"]
+    # senha do portal so via API (POST/PUT em /api/v1/clients/{id}/contacts, campo
+    # "password") — o hash nunca deve ser editado aqui como texto puro.
+    exclude = ["password_hash"]
 
 
 @admin.register(Tag)

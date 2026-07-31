@@ -15,9 +15,31 @@ class DepartmentSerializer(serializers.ModelSerializer):
 
 
 class ClientContactSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, allow_blank=True, min_length=8)
+
     class Meta:
         model = ClientContact
-        fields = ["id", "name", "email", "phone", "role", "has_portal_access", "notes", "created_at"]
+        fields = ["id", "name", "email", "phone", "role", "has_portal_access", "notes", "password", "created_at"]
+
+    def create(self, validated_data):
+        password = validated_data.pop("password", None)
+        contact = super().create(validated_data)
+        if password:
+            self._set_password(contact, password)
+        return contact
+
+    def update(self, instance, validated_data):
+        password = validated_data.pop("password", None)
+        contact = super().update(instance, validated_data)
+        if password:
+            self._set_password(contact, password)
+        return contact
+
+    @staticmethod
+    def _set_password(contact, password):
+        from django.contrib.auth.hashers import make_password
+        contact.password_hash = make_password(password)
+        contact.save(update_fields=["password_hash"])
 
 
 class ClientCompanyListSerializer(serializers.ModelSerializer):

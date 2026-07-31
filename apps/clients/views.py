@@ -101,7 +101,7 @@ class ClientContactListCreateView(TenantAPIView):
         client = get_object_or_404(ClientCompany, pk=client_id, organization=request.tenant)
         serializer = ClientContactSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        contact = ClientContact.objects.create(organization=request.tenant, client=client, **serializer.validated_data)
+        contact = serializer.save(organization=request.tenant, client=client)
         return Response(ClientContactSerializer(contact).data, status=status.HTTP_201_CREATED)
 
 
