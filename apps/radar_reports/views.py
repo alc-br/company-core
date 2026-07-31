@@ -222,3 +222,39 @@ class ExportView(TenantAPIView):
             "id": job.id, "type": job.type, "status": job.status,
             "download_url": download_url, "created_at": job.created_at,
         }, status=201)
+
+
+class SearchView(TenantAPIView):
+    """Busca global do topbar: empresas, tarefas e templates da organizacao ativa."""
+
+    def get(self, request):
+        query = (request.query_params.get("q") or "").strip()
+        if len(query) < 2:
+            return Response({"clients": [], "tasks": [], "templates": []})
+
+        org = request.tenant
+
+        clients = ClientCompany.objects.filter(organization=org, is_deleted=False).filter(
+            Q(name__icontains=query) | Q(trade_name__icontains=query) | Q(cnpj__icontains=query)
+        )[:10]
+
+        tasks = Task.objects.filter(organization=org).filter(
+            Q(title__icontains=query) | Q(description__icontains=query)
+        ).select_related("client")[:10]
+
+        from apps.radar_templates.models import Template
+        templates = Template.objects.filter(organization=org).filter(
+            Q(name__icontains=query) | Q(description__icontains=query) | Q(category__icontains=query)
+        )[:10]
+
+        return Response({
+            "clients": [{"id": c.id, "name": c.name, "cnpj": c.cnpj, "status": c.status} for c in clients],
+            "tasks": [
+                {
+                    "id": t.id, "title": t.title, "status": t.status, "priority": t.priority,
+                    "client": {"name": t.client.name} if t.client_id else None,
+                }
+                for t in tasks
+            ],
+            "templates": [{"id": t.id, "name": t.name, "description": t.description, "category": t.category} for t in templates],
+        })
