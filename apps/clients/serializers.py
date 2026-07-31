@@ -63,6 +63,7 @@ class ClientCompanyListSerializer(serializers.ModelSerializer):
         return {
             "tasks": getattr(obj, "tasks_count", 0),
             "documents": getattr(obj, "documents_count", 0),
+            "contacts": obj.contacts.count(),
         }
 
     def get_applications(self, obj):
