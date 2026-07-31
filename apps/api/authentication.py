@@ -1,5 +1,5 @@
 import hashlib
-from rest_framework.authentication import BaseAuthentication
+from rest_framework.authentication import BaseAuthentication, SessionAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from apps.api.models import APIKey
 from django.utils import timezone
@@ -25,3 +25,16 @@ class APIKeyAuthentication(BaseAuthentication):
             return (key_obj.user, {"organization": key_obj.organization, "api_key": key_obj})
         except APIKey.DoesNotExist:
             raise AuthenticationFailed("Invalid API key")
+
+
+class CsrfExemptSessionAuthentication(SessionAuthentication):
+    """Session authentication without CSRF enforcement.
+
+    The Next.js frontend proxies API calls server-side (see company-radar's
+    src/app/api/v1/[...path]/route.ts) and forwards the session cookie, but
+    does not carry over the CSRF header/token pair. Enforcing CSRF here would
+    reject every authenticated mutation coming through that proxy.
+    """
+
+    def enforce_csrf(self, request):
+        return

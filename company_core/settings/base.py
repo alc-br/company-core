@@ -209,7 +209,7 @@ LOGOUT_REDIRECT_URL = "/"
 # ─── REST Framework ──────────────────────────────────────────
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
-        "rest_framework.authentication.SessionAuthentication",
+        "apps.api.authentication.CsrfExemptSessionAuthentication",
         "apps.api.authentication.APIKeyAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [

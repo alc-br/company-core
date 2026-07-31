@@ -15,7 +15,9 @@ urlpatterns = [
     path(f"{URL_PREFIX}celery-progress/", include("celery_progress.urls")),
     # API
     path(f"{URL_PREFIX}api/v1/", include("apps.api.v1.urls")),
-    # Auth (allauth)
+    # Auth JSON API (consumido pelo proxy do frontend Next.js)
+    path(f"{URL_PREFIX}", include("apps.users.auth_urls")),
+    # Auth (allauth, views HTML classicas)
     path(f"{URL_PREFIX}account/", include("allauth.urls")),
     # Modules
     path(f"{URL_PREFIX}orgs/", include("apps.organizations.urls")),
