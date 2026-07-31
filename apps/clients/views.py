@@ -133,6 +133,23 @@ class TagListCreateView(TenantAPIView):
         return Response(TagSerializer(tag).data, status=status.HTTP_201_CREATED)
 
 
+class TagDetailView(TenantAPIView):
+    def get_object(self, request, pk):
+        from django.shortcuts import get_object_or_404
+        return get_object_or_404(Tag, pk=pk, organization=request.tenant)
+
+    def put(self, request, pk):
+        tag = self.get_object(request, pk)
+        serializer = TagSerializer(tag, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def delete(self, request, pk):
+        self.get_object(request, pk).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class DepartmentListCreateView(TenantAPIView):
     def get(self, request):
         return Response(DepartmentSerializer(Department.objects.filter(organization=request.tenant), many=True).data)

@@ -10,6 +10,7 @@ urlpatterns = [
     path("clients/<int:client_id>/contacts", views.ClientContactListCreateView.as_view()),
     path("client-contacts/<int:pk>", views.ClientContactDetailView.as_view()),
     path("tags", views.TagListCreateView.as_view()),
+    path("tags/<int:pk>", views.TagDetailView.as_view()),
     path("departments", views.DepartmentListCreateView.as_view()),
     path("departments/<int:pk>", views.DepartmentDetailView.as_view()),
 ]

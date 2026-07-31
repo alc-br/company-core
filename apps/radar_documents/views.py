@@ -106,6 +106,11 @@ class DocumentTypeDetailView(TenantAPIView):
         serializer.save()
         return Response(serializer.data)
 
+    def delete(self, request, pk):
+        doc_type = get_object_or_404(DocumentType, pk=pk, organization=request.tenant)
+        doc_type.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class DocumentRequestListCreateView(TenantAPIView):
     def get(self, request):
