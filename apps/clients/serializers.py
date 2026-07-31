@@ -1,21 +1,26 @@
 from rest_framework import serializers
+from apps.api.serializers import NullToBlankMixin
 from apps.clients.models import ClientCompany, ClientContact, Tag, Department
 
 
-class TagSerializer(serializers.ModelSerializer):
+class TagSerializer(NullToBlankMixin, serializers.ModelSerializer):
     class Meta:
         model = Tag
         fields = ["id", "name", "color"]
 
 
-class DepartmentSerializer(serializers.ModelSerializer):
+class DepartmentSerializer(NullToBlankMixin, serializers.ModelSerializer):
+    NULLABLE_FIELDS = {"manager"}
+
     class Meta:
         model = Department
         fields = ["id", "name", "description", "color", "manager"]
 
 
-class ClientContactSerializer(serializers.ModelSerializer):
+class ClientContactSerializer(NullToBlankMixin, serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=False, allow_blank=True, min_length=8)
+
+    NULLABLE_FIELDS = {"password"}
 
     class Meta:
         model = ClientContact
@@ -130,9 +135,11 @@ class ClientCompanyDetailSerializer(ClientCompanyListSerializer):
             return None
 
 
-class ClientCompanyWriteSerializer(serializers.ModelSerializer):
+class ClientCompanyWriteSerializer(NullToBlankMixin, serializers.ModelSerializer):
     tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
     add_tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False, write_only=True)
+
+    NULLABLE_FIELDS = {"open_date", "service_start_date", "responsible", "tags", "add_tags"}
 
     class Meta:
         model = ClientCompany
@@ -143,19 +150,6 @@ class ClientCompanyWriteSerializer(serializers.ModelSerializer):
             "portal_access", "service_start_date", "tags", "add_tags",
         ]
         extra_kwargs = {field: {"required": False} for field in fields}
-
-    # campos que aceitam null de verdade (Date/FK); todo o resto e string
-    # (CharField/EmailField com blank=True mas null=False no model) e o
-    # formulario do frontend manda null explicito pra "vazio" em vez de
-    # omitir a chave ou mandar string vazia.
-    _NULLABLE = {"open_date", "service_start_date", "responsible", "tags", "add_tags"}
-
-    def to_internal_value(self, data):
-        data = dict(data)
-        for key in list(data.keys()):
-            if data[key] is None and key not in self._NULLABLE:
-                data[key] = ""
-        return super().to_internal_value(data)
 
     def update(self, instance, validated_data):
         add_tags = validated_data.pop("add_tags", None)

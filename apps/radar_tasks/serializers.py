@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.api.serializers import NullToBlankMixin
 from apps.radar_tasks.models import Task, ChecklistItem, TaskComment, TaskDependency, TaskFollower
 
 
@@ -113,7 +114,12 @@ class TaskDetailSerializer(TaskRowSerializer):
         return {"id": obj.parent_task_id, "title": obj.parent_task.title} if obj.parent_task_id else None
 
 
-class TaskWriteSerializer(serializers.ModelSerializer):
+class TaskWriteSerializer(NullToBlankMixin, serializers.ModelSerializer):
+    NULLABLE_FIELDS = {
+        "client", "department", "assigned_to_id", "reviewer", "due_date", "parent_task",
+    }
+    JSON_OBJECT_FIELDS = {"recurrence_rule"}
+
     class Meta:
         model = Task
         fields = [

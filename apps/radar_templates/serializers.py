@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from apps.api.serializers import NullToBlankMixin
 from apps.radar_templates.models import Template, TemplateVersion, TemplateApplication
 
 
@@ -89,7 +90,10 @@ class TemplateDetailSerializer(TemplateListSerializer):
         ).data
 
 
-class TemplateWriteSerializer(serializers.ModelSerializer):
+class TemplateWriteSerializer(NullToBlankMixin, serializers.ModelSerializer):
+    NULLABLE_FIELDS = {"responsible", "department"}
+    JSON_ARRAY_FIELDS = {"variables", "stages"}
+
     class Meta:
         model = Template
         fields = [

@@ -1,8 +1,11 @@
 from rest_framework import serializers
+from apps.api.serializers import NullToBlankMixin
 from apps.radar_documents.models import Document, DocumentType, DocumentRequest
 
 
-class DocumentTypeSerializer(serializers.ModelSerializer):
+class DocumentTypeSerializer(NullToBlankMixin, serializers.ModelSerializer):
+    NULLABLE_FIELDS = {"validity_days"}
+
     class Meta:
         model = DocumentType
         fields = ["id", "name", "category", "allowed_formats", "max_size_mb", "validity_days"]
@@ -54,7 +57,9 @@ class DocumentSerializer(serializers.ModelSerializer):
         return url
 
 
-class DocumentRequestSerializer(serializers.ModelSerializer):
+class DocumentRequestSerializer(NullToBlankMixin, serializers.ModelSerializer):
+    NULLABLE_FIELDS = {"due_date"}
+
     class Meta:
         model = DocumentRequest
         fields = [
