@@ -144,6 +144,19 @@ class ClientCompanyWriteSerializer(serializers.ModelSerializer):
         ]
         extra_kwargs = {field: {"required": False} for field in fields}
 
+    # campos que aceitam null de verdade (Date/FK); todo o resto e string
+    # (CharField/EmailField com blank=True mas null=False no model) e o
+    # formulario do frontend manda null explicito pra "vazio" em vez de
+    # omitir a chave ou mandar string vazia.
+    _NULLABLE = {"open_date", "service_start_date", "responsible", "tags", "add_tags"}
+
+    def to_internal_value(self, data):
+        data = dict(data)
+        for key in list(data.keys()):
+            if data[key] is None and key not in self._NULLABLE:
+                data[key] = ""
+        return super().to_internal_value(data)
+
     def update(self, instance, validated_data):
         add_tags = validated_data.pop("add_tags", None)
         instance = super().update(instance, validated_data)
