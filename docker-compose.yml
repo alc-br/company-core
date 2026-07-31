@@ -63,6 +63,8 @@ services:
       - .env
     volumes:
       - static_files:/app/staticfiles
+      - ./apps:/app/apps
+      - ./company_core:/app/company_core
     ports:
       - "127.0.0.1:${APP_PORT:-8000}:8000"
     depends_on:

@@ -86,6 +86,13 @@ COMPANY_CORE_APPS = [
     "apps.health",
     "apps.search",
     "apps.admin_ext",
+    "apps.clients",
+    "apps.radar_templates",
+    "apps.radar_tasks",
+    "apps.radar_documents",
+    "apps.radar_calendar",
+    "apps.radar_reports",
+    "apps.radar_portal",
     "apps.web",
 ]
 
@@ -230,8 +237,17 @@ REST_FRAMEWORK = {
     "ALLOWED_VERSIONS": ["v1", "v2"],
     "EXCEPTION_HANDLER": "apps.api.exception_handler.standard_exception_handler",
     "DEFAULT_RENDERER_CLASSES": [
-        "rest_framework.renderers.JSONRenderer",
+        "djangorestframework_camel_case.render.CamelCaseJSONRenderer",
     ],
+    "DEFAULT_PARSER_CLASSES": [
+        "djangorestframework_camel_case.parser.CamelCaseJSONParser",
+        "djangorestframework_camel_case.parser.CamelCaseFormParser",
+        "djangorestframework_camel_case.parser.CamelCaseMultiPartParser",
+    ],
+}
+
+JSON_UNDERSCOREIZE = {
+    "no_underscore_before_number": True,
 }
 
 # ─── drf-spectacular (OpenAPI) ────────────────────────────────
@@ -381,3 +397,20 @@ PROJECT_METADATA = {
 
 # ─── Schedules (Celery Beat) ──────────────────────────────────
 SCHEDULED_TASKS: dict = {}
+
+# APIs do Radar sao chamadas pelo proxy do Next.js (redirect: 'manual'),
+# entao um redirect por causa de barra final quebraria a chamada.
+APPEND_SLASH = False
+
+# Django 6 usa STORAGES (dict) em vez de DEFAULT_FILE_STORAGE para resolver o
+# backend padrao de arquivos; sem isso, upload caia silenciosamente em disco
+# local mesmo com STORAGE_BACKEND=s3/minio configurado.
+STORAGES = {
+    "default": {
+        "BACKEND": DEFAULT_FILE_STORAGE if STORAGE_BACKEND in ("s3", "minio", "r2")
+        else "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
+    },
+}

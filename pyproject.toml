@@ -16,6 +16,7 @@ dependencies = [
     "django-extensions>=3.2",
     "psycopg[binary]>=3.2",
     "gunicorn>=23.0",
+    "djangorestframework-camel-case>=1.4.2",
 
 
     # Authentication (Pegasus - allauth)

@@ -170,3 +170,28 @@ router.register(r"integration-logs", IntegrationLogViewSet, basename="integratio
 router.register(r"search-indices", SearchIndexViewSet, basename="search-index")
 
 urlpatterns = router.urls
+
+# ─── Company Radar (novos apps de dominio) ─────────────────────────
+from django.urls import include, path
+
+urlpatterns += [
+    path("", include("apps.clients.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_templates.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_tasks.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_documents.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_calendar.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_reports.urls")),
+]
+urlpatterns += [
+    path("", include("apps.radar_portal.urls")),
+]
