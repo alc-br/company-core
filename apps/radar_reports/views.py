@@ -9,6 +9,9 @@ from apps.clients.models import ClientCompany, Department
 from apps.radar_tasks.models import Task
 from apps.radar_documents.models import Document, DocumentRequest
 from apps.organizations.models import Membership
+from apps.radar_reports.models import ExportJob
+from apps.radar_reports.exports import build_export_csv
+from apps.storage.services import StorageService
 
 
 def _period_start(period):
@@ -174,3 +177,48 @@ class ReportsView(TenantAPIView):
             "avg_time": None,
             "person_load": [{"name": p["assigned_to"], "completed": p["completed"], "total": p["total"], "avg_time": None} for p in person_load],
         })
+
+
+class ExportView(TenantAPIView):
+    """Gera a exportacao e ja devolve pronta (o volume de dados por
+    organizacao aqui e pequeno o bastante pra nao justificar fila do
+    Celery + tela de acompanhamento; o ExportJob fica como historico)."""
+
+    def post(self, request):
+        export_type = request.data.get("type", "")
+        export_format = request.data.get("format", "csv")
+        filters = request.data.get("filters") or {}
+
+        job = ExportJob.objects.create(
+            organization=request.tenant, type=export_type, format=export_format,
+            filters=filters, requested_by=request.user,
+        )
+
+        try:
+            from django.core.files.base import ContentFile
+            content, filename = build_export_csv(request.tenant, export_type, filters)
+            key = f"org-{request.tenant.id}/exports/{job.id}-{filename}"
+            stored = StorageService.upload_file(
+                key=key, data=ContentFile(content), content_type="text/csv",
+                organization=request.tenant, uploaded_by=request.user,
+            )
+            job.stored_object_id = stored["id"]
+            job.status = ExportJob.STATUS_COMPLETED
+            job.save(update_fields=["stored_object", "status", "updated_at"])
+        except Exception as exc:
+            job.status = ExportJob.STATUS_FAILED
+            job.error_message = str(exc)
+            job.save(update_fields=["status", "error_message", "updated_at"])
+            return Response({"error": "Falha ao gerar a exportacao."}, status=500)
+
+        from django.core.files.storage import default_storage
+        from django.conf import settings as dj_settings
+        download_url = default_storage.url(job.stored_object.key)
+        internal = getattr(dj_settings, "AWS_S3_ENDPOINT_URL", None)
+        if internal and download_url.startswith(internal):
+            download_url = "/storage/" + download_url[len(internal):].lstrip("/")
+
+        return Response({
+            "id": job.id, "type": job.type, "status": job.status,
+            "download_url": download_url, "created_at": job.created_at,
+        }, status=201)
