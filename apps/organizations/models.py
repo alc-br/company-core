@@ -78,6 +78,14 @@ class Membership(TimestampMixin):
         related_name="invitations_made",
         verbose_name=_("Convidado por"),
     )
+    department = models.ForeignKey(
+        "clients.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="members",
+        verbose_name=_("Departamento"),
+    )
     joined_at = models.DateTimeField(
         auto_now_add=True,
         verbose_name=_("Entrou em"),

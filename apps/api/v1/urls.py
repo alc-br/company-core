@@ -87,6 +87,7 @@ from apps.integrations.views import (
 from apps.search.views import (
     SearchIndexViewSet,
 )
+from apps.organizations.team_views import TeamView, CurrentOrganizationView
 
 # ─── Router ────────────────────────────────────────────────────────
 router = DefaultRouter()
@@ -194,4 +195,8 @@ urlpatterns += [
 ]
 urlpatterns += [
     path("", include("apps.radar_portal.urls")),
+]
+urlpatterns += [
+    path("team", TeamView.as_view()),
+    path("organizations", CurrentOrganizationView.as_view()),
 ]
