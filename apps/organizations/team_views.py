@@ -5,7 +5,9 @@ Membership (membros ativos/suspensos) e Invitation (convites pendentes).
 Reaproveita OrganizationService (invite_member/remove_member) em vez de
 duplicar a lógica de convite.
 """
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from apps.clients.views import TenantAPIView
 from apps.clients.models import Department
@@ -59,6 +61,22 @@ def _serialize_invitation(inv):
         "business_unit": None,
         "user": None,
     }
+
+
+class OrganizationCreateView(APIView):
+    """POST /api/v1/organizations/create — bootstrap para usuario autenticado
+    sem nenhuma organizacao ainda (ex.: veio do fluxo de checkout, ou saiu da
+    ultima org). Nao pode exigir request.tenant como TenantAPIView exige,
+    pois e exatamente essa a organizacao que ainda nao existe."""
+
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        name = (request.data.get("name") or "").strip()
+        if not name:
+            return Response({"error": "Nome da organização é obrigatório."}, status=400)
+        org = OrganizationService.create_organization(name=name, owner=request.user)
+        return Response({"id": org.id, "name": org.name, "slug": org.slug}, status=201)
 
 
 class CurrentOrganizationView(TenantAPIView):

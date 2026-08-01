@@ -36,6 +36,12 @@ class OrganizationService:
         from apps.billing.seed import start_trial_subscription
         start_trial_subscription(organization)
 
+        from apps.settings.models import TenantSetting
+        TenantSetting.objects.create(
+            organization=organization, key="onboarding_completed",
+            value="false", environment="production",
+        )
+
         logger.info(f"Organization '{name}' created by user {owner.id}")
         return organization
 

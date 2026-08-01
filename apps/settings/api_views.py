@@ -14,7 +14,10 @@ from rest_framework.response import Response
 from apps.clients.views import TenantAPIView
 from apps.settings.models import TenantSetting
 
-SIMPLE_KEYS = ["trade_name", "cnpj", "email", "phone", "logo", "timezone", "primary_color", "password_min_length", "audit_retention_days"]
+SIMPLE_KEYS = [
+    "trade_name", "cnpj", "email", "phone", "address", "logo", "timezone",
+    "primary_color", "password_min_length", "audit_retention_days",
+]
 
 
 def _settings_dict(org):
@@ -53,11 +56,15 @@ class SettingsView(TenantAPIView):
             "cnpj": kv.get("cnpj", ""),
             "email": kv.get("email", ""),
             "phone": kv.get("phone", ""),
+            "address": kv.get("address", ""),
             "logo": kv.get("logo") or None,
             "timezone": kv.get("timezone", "America/Sao_Paulo"),
             "primary_color": kv.get("primary_color", "#2563eb"),
             "password_min_length": int(kv.get("password_min_length", 8)),
             "audit_retention_days": int(kv.get("audit_retention_days", 365)),
+            # Ausente = organizacao criada antes deste recurso existir — nao forcamos
+            # onboarding retroativo. So fica false quando setado explicitamente na criacao.
+            "onboarding_completed": kv.get("onboarding_completed", "true") == "true",
             "settings": nested,
             "sessions": _active_sessions(request.user),
         })
@@ -82,6 +89,12 @@ class SettingsView(TenantAPIView):
             TenantSetting.objects.update_or_create(
                 organization=org, key="settings", environment="production",
                 defaults={"value": json.dumps(body["settings"])},
+            )
+
+        if "onboarding_completed" in body:
+            TenantSetting.objects.update_or_create(
+                organization=org, key="onboarding_completed", environment="production",
+                defaults={"value": "true" if body["onboarding_completed"] else "false"},
             )
 
         return self.get(request)
