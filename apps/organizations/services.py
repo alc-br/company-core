@@ -33,6 +33,9 @@ class OrganizationService:
             invited_by=owner,
         )
 
+        from apps.billing.seed import start_trial_subscription
+        start_trial_subscription(organization)
+
         logger.info(f"Organization '{name}' created by user {owner.id}")
         return organization
 

@@ -89,6 +89,7 @@ from apps.search.views import (
 )
 from apps.organizations.team_views import TeamView, CurrentOrganizationView
 from apps.notifications.api_views import NotificationListView
+from apps.billing.api_views import PlanListView, InvoiceListView
 
 # ─── Router ────────────────────────────────────────────────────────
 router = DefaultRouter()
@@ -203,4 +204,8 @@ urlpatterns += [
 ]
 urlpatterns += [
     path("notifications", NotificationListView.as_view()),
+]
+urlpatterns += [
+    path("plans", PlanListView.as_view()),
+    path("invoices", InvoiceListView.as_view()),
 ]

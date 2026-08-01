@@ -61,18 +61,94 @@ def _serialize_invitation(inv):
 
 
 class CurrentOrganizationView(TenantAPIView):
-    """GET /api/v1/organizations — usado pelo layout (topbar) para exibir o nome da org ativa."""
+    """GET/PUT /api/v1/organizations — nome da org (topbar) e, com
+    ?include=subscription, os dados reais de assinatura usados por
+    /app/assinatura (apps.billing: Plan/Subscription/Invoice)."""
 
     def get(self, request):
         org = request.tenant
-        return Response({
+        data = {
             "id": org.id,
             "name": org.name,
             "slug": org.slug,
             "membersCount": Membership.objects.filter(
                 organization=org, status=MembershipStatus.ACTIVE
             ).count(),
-        })
+        }
+        if request.query_params.get("include") == "subscription":
+            data["subscription"] = self._serialize_subscription(org)
+        return Response(data)
+
+    def put(self, request):
+        from apps.billing.models import Plan
+        from apps.common.constants import SubscriptionStatus
+
+        subscription = self._current_subscription(request.tenant)
+        if not subscription:
+            return Response({"error": "Nenhuma assinatura ativa para esta organização."}, status=404)
+
+        if "cancel" in request.data:
+            subscription.cancel_at_period_end = bool(request.data["cancel"])
+            subscription.save(update_fields=["cancel_at_period_end", "updated_at"])
+        if request.data.get("plan_id"):
+            plan = Plan.objects.filter(pk=request.data["plan_id"], is_active=True).first()
+            if not plan:
+                return Response({"error": "Plano inválido."}, status=400)
+            subscription.plan = plan
+            subscription.status = SubscriptionStatus.ACTIVE
+            subscription.save(update_fields=["plan", "status", "updated_at"])
+
+        return Response(self._serialize_subscription(request.tenant))
+
+    def _current_subscription(self, org):
+        from apps.billing.models import Subscription
+        from apps.common.constants import SubscriptionStatus
+        return (
+            Subscription.objects.filter(
+                organization=org,
+                status__in=[SubscriptionStatus.ACTIVE, SubscriptionStatus.TRIALING, SubscriptionStatus.PAST_DUE],
+            )
+            .select_related("plan")
+            .order_by("-created_at")
+            .first()
+        )
+
+    def _serialize_subscription(self, org):
+        from apps.common.constants import BillingCycle, SubscriptionStatus
+        from apps.billing.api_views import serialize_plan
+        from apps.clients.models import ClientCompany
+        from apps.radar_documents.models import Document
+
+        sub = self._current_subscription(org)
+        if not sub:
+            return None
+
+        status_slugs = {
+            SubscriptionStatus.ACTIVE: "active", SubscriptionStatus.TRIALING: "trialing",
+            SubscriptionStatus.PAST_DUE: "past_due", SubscriptionStatus.CANCELED: "canceled",
+            SubscriptionStatus.PAUSED: "paused", SubscriptionStatus.UNPAID: "unpaid",
+        }
+        cycle_slugs = {
+            BillingCycle.ANNUAL: "annual", BillingCycle.SEMIANNUAL: "semiannual",
+            BillingCycle.QUARTERLY: "quarterly", BillingCycle.MONTHLY: "monthly",
+        }
+
+        return {
+            "id": sub.id,
+            "plan_id": sub.plan_id,
+            "status": status_slugs.get(sub.status, "active"),
+            "billing_cycle": cycle_slugs.get(sub.plan.billing_cycle, "monthly"),
+            "current_period_end": sub.current_period_end,
+            "cancel_at_period_end": sub.cancel_at_period_end,
+            "plan": serialize_plan(sub.plan, current_plan_id=sub.plan_id),
+            "organization": {
+                "count": {
+                    "clients": ClientCompany.objects.filter(organization=org, is_deleted=False).count(),
+                    "members": Membership.objects.filter(organization=org, status=MembershipStatus.ACTIVE).count(),
+                    "documents": Document.objects.filter(organization=org).count(),
+                }
+            },
+        }
 
 
 class TeamView(TenantAPIView):
