@@ -13,6 +13,7 @@ from apps.common.constants import MembershipRole, MembershipStatus, InvitationSt
 from apps.common.exceptions import ValidationError as ServiceValidationError, PermissionDeniedError, NotFoundException
 from apps.organizations.models import Membership, Invitation
 from apps.organizations.services import OrganizationService
+from apps.audit.helpers import log_audit
 
 ROLE_SLUGS = {
     MembershipRole.OWNER: "owner",
@@ -97,6 +98,11 @@ class CurrentOrganizationView(TenantAPIView):
             subscription.plan = plan
             subscription.status = SubscriptionStatus.ACTIVE
             subscription.save(update_fields=["plan", "status", "updated_at"])
+            log_audit(request, action="plan_changed", target_type="subscription", target_id=subscription.id, metadata={"plan": plan.name})
+
+        if "cancel" in request.data:
+            action = "subscription_cancel_scheduled" if request.data["cancel"] else "subscription_reactivated"
+            log_audit(request, action=action, target_type="subscription", target_id=subscription.id)
 
         return Response(self._serialize_subscription(request.tenant))
 
@@ -215,6 +221,7 @@ class TeamView(TenantAPIView):
             return Response({"error": str(e)}, status=400)
 
         _send_invite_email(invitation, org, name)
+        log_audit(request, action="member_invited", target_type="invitation", target_id=invitation.id, metadata={"email": email})
         return Response(_serialize_invitation(invitation), status=201)
 
     def put(self, request):
@@ -264,6 +271,7 @@ class TeamView(TenantAPIView):
                 return Response({"error": str(e)}, status=403)
             except NotFoundException as e:
                 return Response({"error": str(e)}, status=404)
+            log_audit(request, action="member_removed", target_type="membership", target_id=membership.id, metadata={"email": membership.user.email})
             return Response({"success": True})
 
         if new_status == "suspended":
@@ -271,9 +279,11 @@ class TeamView(TenantAPIView):
                 return Response({"error": "Não é possível suspender o proprietário."}, status=403)
             membership.status = MembershipStatus.SUSPENDED
             membership.save(update_fields=["status", "updated_at"])
+            log_audit(request, action="member_suspended", target_type="membership", target_id=membership.id, metadata={"email": membership.user.email})
         elif new_status == "active":
             membership.status = MembershipStatus.ACTIVE
             membership.save(update_fields=["status", "updated_at"])
+            log_audit(request, action="member_reactivated", target_type="membership", target_id=membership.id, metadata={"email": membership.user.email})
         else:
             return Response({"error": "Status inválido."}, status=400)
 

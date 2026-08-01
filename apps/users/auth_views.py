@@ -120,6 +120,15 @@ def api_login(request):
         return JsonResponse({"error": "E-mail ou senha invalidos."}, status=401)
 
     auth_login(request, user)
+    try:
+        from apps.audit.helpers import log_audit
+        from apps.organizations.models import Membership
+        from apps.common.constants import MembershipStatus
+        active = Membership.objects.filter(user=user, status=MembershipStatus.ACTIVE).select_related("organization").first()
+        request.tenant = active.organization if active else None
+        log_audit(request, action="login", target_type="user", target_id=user.id)
+    except Exception:
+        pass
     return JsonResponse({"user": _serialize_user(user)})
 
 
