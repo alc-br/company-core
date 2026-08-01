@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from apps.common.mixins import TimestampMixin
@@ -64,3 +65,33 @@ class NotificationLog(TimestampMixin):
 
     def __str__(self):
         return f"{self.recipient} - {self.status}"
+
+
+class Notification(TimestampMixin):
+    """Notificacao in-app (inbox do usuario), distinta do NotificationLog
+    (que registra tentativas de envio por e-mail/webhook)."""
+
+    organization = models.ForeignKey(
+        "organizations.Organization", on_delete=models.CASCADE,
+        related_name="inapp_notifications", verbose_name=_("Organização"),
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        related_name="notifications", verbose_name=_("Usuário"),
+    )
+    title = models.CharField(max_length=255, verbose_name=_("Título"))
+    message = models.TextField(blank=True, verbose_name=_("Mensagem"))
+    type = models.CharField(max_length=50, default="info", verbose_name=_("Tipo"))
+    priority = models.CharField(max_length=20, default="normal", verbose_name=_("Prioridade"))
+    link = models.CharField(max_length=500, blank=True, verbose_name=_("Link"))
+    read = models.BooleanField(default=False, verbose_name=_("Lida"))
+    read_at = models.DateTimeField(null=True, blank=True, verbose_name=_("Lida em"))
+
+    class Meta:
+        verbose_name = _("Notificação")
+        verbose_name_plural = _("Notificações")
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["user", "read"])]
+
+    def __str__(self):
+        return f"{self.title} -> {self.user_id}"

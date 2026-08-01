@@ -11,6 +11,7 @@ from apps.clients.models import ClientCompany
 from apps.radar_documents.models import Document, DocumentType, DocumentRequest
 from apps.radar_documents.serializers import DocumentSerializer, DocumentTypeSerializer, DocumentRequestSerializer
 from apps.storage.services import StorageService
+from apps.notifications.api_views import notify_user
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +73,7 @@ class DocumentDetailView(TenantAPIView):
     def put(self, request, pk):
         document = self.get_object(request, pk)
         new_status = request.data.get("status")
+        status_changed = bool(new_status) and new_status != document.status
         if new_status:
             document.status = new_status
             if new_status == Document.STATUS_REJEITADO:
@@ -80,11 +82,31 @@ class DocumentDetailView(TenantAPIView):
             if field in request.data:
                 setattr(document, field, request.data[field])
         document.save()
+        if status_changed and new_status in (Document.STATUS_APROVADO, Document.STATUS_REJEITADO):
+            _notify_document_decision(request, document, new_status)
         return Response(DocumentSerializer(document).data)
 
     def delete(self, request, pk):
         self.get_object(request, pk).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+def _notify_document_decision(request, document, new_status):
+    """Notifica o responsavel interno pelo cliente quando um documento e aprovado/rejeitado."""
+    responsible_id = document.client.responsible_id
+    if not responsible_id or responsible_id == request.user.id:
+        return
+    from apps.users.models import CustomUser
+    responsible = CustomUser.objects.filter(pk=responsible_id).first()
+    if not responsible:
+        return
+    label = "aprovado" if new_status == Document.STATUS_APROVADO else "rejeitado"
+    notify_user(
+        organization=document.organization, user=responsible,
+        title=f"Documento {label}", message=f"{document.name} ({document.client.name})",
+        type="document_approved" if new_status == Document.STATUS_APROVADO else "warning",
+        link=f"/app/documentos?clientId={document.client_id}",
+    )
 
 
 class DocumentTypeListCreateView(TenantAPIView):

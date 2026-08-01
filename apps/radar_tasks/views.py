@@ -7,6 +7,7 @@ from rest_framework.response import Response
 
 from apps.clients.views import TenantAPIView
 from apps.radar_tasks.models import Task, ChecklistItem, TaskComment, TaskDependency, TaskFollower
+from apps.notifications.api_views import notify_user
 from apps.radar_tasks.serializers import TaskRowSerializer, TaskDetailSerializer, TaskWriteSerializer
 
 logger = logging.getLogger(__name__)
@@ -82,6 +83,7 @@ class TaskListCreateView(TenantAPIView):
                     text=item.get("text", ""), required=item.get("required", False), order=i,
                 )
 
+        _notify_assignment(request, task)
         return Response(TaskDetailSerializer(task).data, status=status.HTTP_201_CREATED)
 
 
@@ -133,11 +135,14 @@ class TaskDetailView(TenantAPIView):
             task.save(update_fields=["due_date", "updated_at"])
 
         if "assigned_to" in body or "assigned_to_id" in body:
+            previous_assignee_id = task.assigned_to_id
             if "assigned_to" in body:
                 task.assigned_to = body["assigned_to"]
             if "assigned_to_id" in body:
                 task.assigned_to_id = body["assigned_to_id"]
             task.save(update_fields=["assigned_to", "assigned_to_id", "updated_at"])
+            if task.assigned_to_id and task.assigned_to_id != previous_assignee_id:
+                _notify_assignment(request, task)
 
         if "add_checklist" in body:
             existing = task.checklist.count()
@@ -214,6 +219,23 @@ class TaskCommentListCreateView(TenantAPIView):
         )
         from apps.radar_tasks.serializers import TaskCommentSerializer
         return Response(TaskCommentSerializer(task.comments.all(), many=True).data, status=status.HTTP_201_CREATED)
+
+
+def _notify_assignment(request, task):
+    """Notifica o responsavel designado, exceto quando ele mesmo fez a atribuicao.
+
+    Atencao: 'assigned_to_id' e o nome literal do campo ForeignKey (o nome
+    display em texto livre e 'assigned_to') — o atributo ja retorna a
+    instancia de CustomUser, nao um inteiro.
+    """
+    assignee = task.assigned_to_id
+    if not assignee or assignee.id == request.user.id:
+        return
+    notify_user(
+        organization=task.organization, user=assignee,
+        title="Nova tarefa atribuida a voce", message=task.title,
+        type="task_assigned", link=f"/app/tarefas/{task.id}",
+    )
 
 
 class TaskFollowView(TenantAPIView):

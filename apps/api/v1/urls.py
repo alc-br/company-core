@@ -88,6 +88,7 @@ from apps.search.views import (
     SearchIndexViewSet,
 )
 from apps.organizations.team_views import TeamView, CurrentOrganizationView
+from apps.notifications.api_views import NotificationListView
 
 # ─── Router ────────────────────────────────────────────────────────
 router = DefaultRouter()
@@ -199,4 +200,7 @@ urlpatterns += [
 urlpatterns += [
     path("team", TeamView.as_view()),
     path("organizations", CurrentOrganizationView.as_view()),
+]
+urlpatterns += [
+    path("notifications", NotificationListView.as_view()),
 ]
