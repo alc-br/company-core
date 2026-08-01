@@ -9,10 +9,15 @@ chave. Nada fica so na tela: tudo que o form tem, persiste de verdade.
 """
 import json
 
+from rest_framework import status
+from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.response import Response
 
 from apps.clients.views import TenantAPIView
 from apps.settings.models import TenantSetting
+
+MAX_LOGO_SIZE = 2 * 1024 * 1024
+ALLOWED_LOGO_TYPES = {"image/png", "image/jpeg"}
 
 SIMPLE_KEYS = [
     "trade_name", "cnpj", "email", "phone", "address", "logo", "timezone",
@@ -98,3 +103,45 @@ class SettingsView(TenantAPIView):
             )
 
         return self.get(request)
+
+
+def _public_storage_url(internal_url, request):
+    """Reescreve a URL assinada do MinIO (rede interna docker) para o path
+    publico /storage/ exposto pelo nginx — mesmo padrao usado em
+    apps/radar_documents/serializers.py."""
+    from django.conf import settings
+
+    internal = getattr(settings, "AWS_S3_ENDPOINT_URL", None)
+    if internal and internal_url and internal_url.startswith(internal):
+        base = request.build_absolute_uri("/storage/")
+        return base.rstrip("/") + "/" + internal_url[len(internal):].lstrip("/")
+    return internal_url
+
+
+class LogoUploadView(TenantAPIView):
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request):
+        file_obj = request.FILES.get("file")
+        if not file_obj:
+            return Response({"error": "Arquivo obrigatório."}, status=status.HTTP_400_BAD_REQUEST)
+        if file_obj.content_type not in ALLOWED_LOGO_TYPES:
+            return Response({"error": "Envie um arquivo PNG ou JPG."}, status=status.HTTP_400_BAD_REQUEST)
+        if file_obj.size > MAX_LOGO_SIZE:
+            return Response({"error": "Arquivo maior que 2MB."}, status=status.HTTP_400_BAD_REQUEST)
+
+        from apps.storage.services import StorageService
+
+        org = request.tenant
+        key = f"org-{org.id}/logo/{file_obj.name}"
+        stored = StorageService.upload_file(
+            key=key, data=file_obj, content_type=file_obj.content_type,
+            organization=org, uploaded_by=request.user,
+        )
+        url = _public_storage_url(stored.get("url"), request)
+
+        TenantSetting.objects.update_or_create(
+            organization=org, key="logo", environment="production",
+            defaults={"value": url or ""},
+        )
+        return Response({"logo": url}, status=status.HTTP_201_CREATED)
