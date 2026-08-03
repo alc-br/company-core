@@ -36,15 +36,19 @@ def _compute_due_date(base_date: date, rule: dict):
     except (TypeError, ValueError):
         value = 0
 
+    # Os tipos reais (options do <Select> em templates/[id]/page.tsx) sao
+    # base_date/days_before/days_after/fixed_month_day/no_deadline — os
+    # aliases extras abaixo cobrem nomes anteriores/alternativos ja vistos
+    # em payloads manuais, mas o contrato de verdade e o do frontend.
     if rule_type in ("no_deadline", "sem_prazo"):
         return None
-    if rule_type in ("on_base_date", "na_data_base"):
+    if rule_type in ("base_date", "on_base_date", "na_data_base"):
         return base_date
-    if rule_type in ("days_before_base",):
+    if rule_type in ("days_before", "days_before_base"):
         return base_date - timedelta(days=value)
-    if rule_type in ("days_after_base", "days_after_application"):
+    if rule_type in ("days_after", "days_after_base", "days_after_application"):
         return base_date + timedelta(days=value)
-    if rule_type in ("fixed_day_of_month",):
+    if rule_type in ("fixed_month_day", "fixed_day_of_month"):
         import calendar
         day = min(value or base_date.day, calendar.monthrange(base_date.year, base_date.month)[1])
         return base_date.replace(day=day)
