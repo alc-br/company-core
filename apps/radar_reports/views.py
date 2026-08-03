@@ -1,7 +1,8 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, time as dt_time
 
-from django.db.models import Count, F, Q
+from django.db.models import Avg, Count, DurationField, ExpressionWrapper, F, Q
 from django.utils import timezone
+from django.utils.dateparse import parse_date, parse_datetime
 from rest_framework.response import Response
 
 from apps.clients.views import TenantAPIView
@@ -12,6 +13,22 @@ from apps.organizations.models import Membership
 from apps.radar_reports.models import ExportJob
 from apps.radar_reports.exports import build_export_csv
 from apps.storage.services import StorageService
+
+
+def _parse_bound(value, end_of_day=False):
+    """Converte 'from'/'to' (data ou datetime ISO vindos da query string) em
+    datetime timezone-aware, para permitir aritmetica de periodo (tendencia)."""
+    if not value:
+        return None
+    dt = parse_datetime(value)
+    if dt is None:
+        d = parse_date(value)
+        if d is None:
+            return None
+        dt = datetime.combine(d, dt_time.max if end_of_day else dt_time.min)
+    if timezone.is_naive(dt):
+        dt = timezone.make_aware(dt)
+    return dt
 
 
 def _period_start(period):
@@ -162,20 +179,60 @@ class ReportsView(TenantAPIView):
             })
 
         # produtividade (default)
-        completed = tasks.filter(status=Task.STATUS_CONCLUIDA)
-        on_time = completed.filter(due_date__isnull=False, completed_at__lte=F("due_date")).count()
-        overdue_count = tasks.filter(status__in=[Task.STATUS_A_FAZER, Task.STATUS_EM_ANDAMENTO], due_date__lt=timezone.now()).count()
+        now = timezone.now()
+        duration_expr = ExpressionWrapper(F("completed_at") - F("created_at"), output_field=DurationField())
+
+        def _productivity_counts(qs):
+            completed_qs = qs.filter(status=Task.STATUS_CONCLUIDA, completed_at__isnull=False)
+            on_time_n = completed_qs.filter(due_date__isnull=False, completed_at__lte=F("due_date")).count()
+            overdue_n = qs.filter(status__in=[Task.STATUS_A_FAZER, Task.STATUS_EM_ANDAMENTO], due_date__lt=now).count()
+            avg_duration = completed_qs.aggregate(avg=Avg(duration_expr))["avg"]
+            avg_hours_n = round(avg_duration.total_seconds() / 3600, 1) if avg_duration else None
+            return completed_qs.count(), on_time_n, overdue_n, avg_hours_n
+
+        completed_count, on_time, overdue_count, avg_hours = _productivity_counts(tasks)
+
         person_load = list(
             tasks.exclude(assigned_to="").values("assigned_to")
             .annotate(total=Count("id"), completed=Count("id", filter=Q(status=Task.STATUS_CONCLUIDA)))
             .order_by("-total")[:20]
         )
+        person_avg = {
+            row["assigned_to"]: round(row["avg"].total_seconds() / 3600, 1) if row["avg"] else None
+            for row in (
+                tasks.exclude(assigned_to="")
+                .filter(status=Task.STATUS_CONCLUIDA, completed_at__isnull=False)
+                .values("assigned_to")
+                .annotate(avg=Avg(duration_expr))
+            )
+        }
+
+        # Tendencia real: compara com o periodo imediatamente anterior, de mesma duracao
+        # (nao um numero fixo — antes disso os badges de +12%/-5% eram sempre iguais).
+        period_end = _parse_bound(date_to, end_of_day=True) or now
+        period_start = _parse_bound(date_from) or (period_end - timedelta(days=30))
+        period_length = period_end - period_start
+        prev_tasks = Task.objects.filter(
+            organization=org, due_date__gte=period_start - period_length, due_date__lt=period_start,
+        )
+        prev_completed, _, prev_overdue, _ = _productivity_counts(prev_tasks)
+
+        def _pct_change(current, previous):
+            if not previous:
+                return None
+            return round(((current - previous) / previous) * 100)
+
         return Response({
-            "completed": completed.count(),
+            "completed": completed_count,
             "on_time": on_time,
             "overdue": overdue_count,
-            "avg_time": None,
-            "person_load": [{"name": p["assigned_to"], "completed": p["completed"], "total": p["total"], "avg_time": None} for p in person_load],
+            "avg_time": avg_hours,
+            "completed_trend": _pct_change(completed_count, prev_completed),
+            "overdue_trend": _pct_change(overdue_count, prev_overdue),
+            "person_load": [
+                {"name": p["assigned_to"], "completed": p["completed"], "total": p["total"], "avg_time": person_avg.get(p["assigned_to"])}
+                for p in person_load
+            ],
         })
 
 
