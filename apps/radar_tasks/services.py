@@ -4,6 +4,7 @@ from django.db import transaction
 
 from apps.radar_tasks.models import Task, ChecklistItem
 from apps.clients.models import Department
+from apps.organizations.models import Membership
 
 logger = logging.getLogger(__name__)
 
@@ -16,6 +17,34 @@ def _resolve_department(organization, ref):
         if dept:
             return dept
     return Department.objects.filter(organization=organization, name__iexact=str(ref)).first()
+
+
+def _resolve_assignee(organization, role_mappings, department_ref, role_ref):
+    """Resolve o usuario mapeado no wizard 'Aplicar Template' (Step 3).
+
+    role_mappings vem do TemplateApplication (ver TemplateApplicationWriteSerializer)
+    com as MESMAS chaves que o wizard usa em aplicar-template/page.tsx: o
+    papel bruto da tarefa, ou 'dept_<department bruto>'. Os valores sao ids
+    de Membership no formato 'm-<id>' (retornados por /api/v1/team), nao ids
+    de User direto.
+    """
+    if not role_mappings:
+        return None
+
+    value = None
+    if role_ref:
+        value = role_mappings.get(str(role_ref))
+    if not value and department_ref:
+        value = role_mappings.get(f"dept_{department_ref}")
+    if not value:
+        return None
+
+    membership_id = str(value).removeprefix("m-")
+    if not membership_id.isdigit():
+        return None
+
+    membership = Membership.objects.filter(pk=int(membership_id), organization=organization).select_related("user").first()
+    return membership.user if membership else None
 
 
 def _compute_due_date(base_date: date, rule: dict):
@@ -78,6 +107,9 @@ def generate_tasks_from_application(application):
             department = _resolve_department(organization, task_def.get("department"))
             portal_visible = task_def.get("portal_visible", task_def.get("portalVisible"))
             portal_instructions = task_def.get("portal_instructions", task_def.get("portalInstructions", ""))
+            assignee = _resolve_assignee(
+                organization, application.role_mappings, task_def.get("department"), task_def.get("role"),
+            )
 
             task = Task.objects.create(
                 organization=organization,
@@ -87,6 +119,8 @@ def generate_tasks_from_application(application):
                 priority=task_def.get("priority", Task.PRIORITY_MEDIUM),
                 category=stage.get("name", ""),
                 department=department,
+                assigned_to_id=assignee,
+                assigned_to=assignee.get_display_name() if assignee else "",
                 due_date=due_date,
                 template=application.template,
                 application=application,
