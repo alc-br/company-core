@@ -111,12 +111,15 @@ class TemplateVersionSerializer(serializers.ModelSerializer):
     stages_count = serializers.SerializerMethodField()
     tasks_count = serializers.SerializerMethodField()
     applications_count = serializers.SerializerMethodField()
+    stages = serializers.SerializerMethodField()
+    variables = serializers.SerializerMethodField()
 
     class Meta:
         model = TemplateVersion
         fields = [
-            "id", "version_number", "published_at", "published_by_name",
+            "id", "version_number", "name", "published_at", "published_by_name",
             "is_current", "is_draft", "stages_count", "tasks_count", "applications_count", "created_at",
+            "stages", "variables",
         ]
 
     def get_published_by_name(self, obj):
@@ -133,6 +136,15 @@ class TemplateVersionSerializer(serializers.ModelSerializer):
 
     def get_applications_count(self, obj):
         return obj.applications.count()
+
+    def get_stages(self, obj):
+        # Snapshot imutavel da publicacao — e o que "Aplicar Template" de
+        # fato usa em generate_tasks_from_application, nao o obj.stages
+        # (rascunho ao vivo, que pode ja ter mudado desde essa versao).
+        return obj.stages_snapshot or []
+
+    def get_variables(self, obj):
+        return (obj.metadata_snapshot or {}).get("variables", [])
 
 
 class TemplateApplicationWriteSerializer(serializers.Serializer):
