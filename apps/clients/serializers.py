@@ -52,22 +52,41 @@ class ClientCompanyListSerializer(serializers.ModelSerializer):
     pending_tasks = serializers.SerializerMethodField()
     count = serializers.SerializerMethodField()
     applications = serializers.SerializerMethodField()
+    next_due_date = serializers.SerializerMethodField()
 
     class Meta:
         model = ClientCompany
         fields = [
             "id", "name", "trade_name", "cnpj", "tax_regime", "status",
             "responsible", "segment", "tags_list", "pending_tasks", "count",
-            "applications", "created_at", "updated_at",
+            "applications", "next_due_date", "created_at", "updated_at",
         ]
 
     def get_pending_tasks(self, obj):
-        return getattr(obj, "pending_tasks_count", 0)
+        # Unico consumidor real e a coluna "Tarefas Atrasadas" da listagem de
+        # empresas — o nome do campo (pending_tasks) engana, mas o que a tela
+        # mostra e contagem de atraso, mesmo criterio de get_overdue_tasks_count.
+        # 'obj' nunca vinha com tasks_count anotado (nenhum .annotate() existe
+        # em get_client_queryset) entao getattr(...,0) sempre caia no default
+        # e a coluna mostrava 0 mesmo com tarefas atrasadas reais.
+        try:
+            from django.utils import timezone
+            return obj.radar_tasks.filter(status__in=["a_fazer", "em_andamento"], due_date__lt=timezone.now()).count()
+        except AttributeError:
+            return 0
 
     def get_count(self, obj):
+        try:
+            tasks_n = obj.radar_tasks.count()
+        except AttributeError:
+            tasks_n = 0
+        try:
+            documents_n = obj.documents.count()
+        except AttributeError:
+            documents_n = 0
         return {
-            "tasks": getattr(obj, "tasks_count", 0),
-            "documents": getattr(obj, "documents_count", 0),
+            "tasks": tasks_n,
+            "documents": documents_n,
             "contacts": obj.contacts.count(),
         }
 
@@ -78,6 +97,21 @@ class ClientCompanyListSerializer(serializers.ModelSerializer):
         except (ImportError, AttributeError):
             return []
 
+    def get_next_due_date(self, obj):
+        # Coluna "Proxima Data" da listagem de empresas: getNextDate() no
+        # frontend era um placeholder que sempre retornava null ("will be
+        # computed server-side ideally") — o campo nunca existiu na resposta.
+        try:
+            from django.utils import timezone
+            task = (
+                obj.radar_tasks.filter(status__in=["a_fazer", "em_andamento"], due_date__gte=timezone.now())
+                .order_by("due_date")
+                .first()
+            )
+            return task.due_date if task else None
+        except AttributeError:
+            return None
+
 
 class ClientCompanyDetailSerializer(ClientCompanyListSerializer):
     contacts = ClientContactSerializer(many=True, read_only=True)
@@ -85,14 +119,13 @@ class ClientCompanyDetailSerializer(ClientCompanyListSerializer):
     documents = serializers.SerializerMethodField()
     overdue_tasks_count = serializers.SerializerMethodField()
     active_applications_count = serializers.SerializerMethodField()
-    next_due_date = serializers.SerializerMethodField()
 
     class Meta(ClientCompanyListSerializer.Meta):
         fields = ClientCompanyListSerializer.Meta.fields + [
             "ie", "im", "cnae", "company_size", "open_date", "email", "phone",
             "address", "city", "state", "zip_code", "notes", "portal_access",
             "service_start_date", "contacts", "tasks", "documents",
-            "overdue_tasks_count", "active_applications_count", "next_due_date",
+            "overdue_tasks_count", "active_applications_count",
         ]
 
     def get_tasks(self, obj):
@@ -121,18 +154,6 @@ class ClientCompanyDetailSerializer(ClientCompanyListSerializer):
             return obj.template_applications.filter(status="active").count()
         except (ImportError, AttributeError):
             return 0
-
-    def get_next_due_date(self, obj):
-        try:
-            from django.utils import timezone
-            task = (
-                obj.radar_tasks.filter(status__in=["a_fazer", "em_andamento"], due_date__gte=timezone.now())
-                .order_by("due_date")
-                .first()
-            )
-            return task.due_date if task else None
-        except (ImportError, AttributeError):
-            return None
 
 
 class ClientCompanyWriteSerializer(NullToBlankMixin, serializers.ModelSerializer):
