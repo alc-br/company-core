@@ -64,8 +64,16 @@ def generate_tasks_from_application(application):
 
     for stage in stages:
         for task_def in stage.get("tasks", []) or []:
-            due_date = _compute_due_date(application.base_date, task_def.get("dueDateRule") or {})
+            # 'stages' e um JSONField livre, mas passa pelo CamelCaseJSONParser
+            # global igual qualquer outro body de request — as chaves internas
+            # (dueDateRule, portalVisible, portalInstructions) chegam aqui ja
+            # convertidas para snake_case. Ler a versao camelCase aqui sempre
+            # falhava silenciosamente e a tarefa caia na data-base.
+            due_date_rule = task_def.get("due_date_rule") or task_def.get("dueDateRule") or {}
+            due_date = _compute_due_date(application.base_date, due_date_rule)
             department = _resolve_department(organization, task_def.get("department"))
+            portal_visible = task_def.get("portal_visible", task_def.get("portalVisible"))
+            portal_instructions = task_def.get("portal_instructions", task_def.get("portalInstructions", ""))
 
             task = Task.objects.create(
                 organization=organization,
@@ -78,8 +86,8 @@ def generate_tasks_from_application(application):
                 due_date=due_date,
                 template=application.template,
                 application=application,
-                portal_visible=bool(task_def.get("portalVisible")),
-                portal_instructions=task_def.get("portalInstructions", ""),
+                portal_visible=bool(portal_visible),
+                portal_instructions=portal_instructions,
             )
             for i, item in enumerate(task_def.get("checklist", []) or []):
                 ChecklistItem.objects.create(
