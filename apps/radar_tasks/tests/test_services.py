@@ -47,6 +47,54 @@ class TestGenerateTasksFromApplication:
         assert task.assigned_to_id == user
         assert task.assigned_to == user.get_display_name()
 
+    def test_assigns_task_to_member_mapped_to_role(self):
+        organization = Organization.objects.create(name="Escritorio Teste")
+        client = ClientCompany.objects.create(organization=organization, name="Cliente Teste")
+        user = User.objects.create_user(email="fiscal@example.com", password="pass123")
+        membership = Membership.objects.create(user=user, organization=organization)
+
+        stages = [
+            {"name": "Etapa 1", "tasks": [
+                {"title": "Fechar balanco", "role": "Responsavel Fiscal"},
+            ]},
+        ]
+        application = _make_application(
+            organization, client, stages,
+            role_mappings={"Responsavel Fiscal": f"m-{membership.id}"},
+        )
+
+        created = generate_tasks_from_application(application)
+
+        assert len(created) == 1
+        assert created[0].assigned_to_id == user
+
+    def test_role_mapping_takes_precedence_over_department(self):
+        organization = Organization.objects.create(name="Escritorio Teste")
+        client = ClientCompany.objects.create(organization=organization, name="Cliente Teste")
+        department = Department.objects.create(organization=organization, name="Fiscal")
+        role_user = User.objects.create_user(email="role@example.com", password="pass123")
+        dept_user = User.objects.create_user(email="dept@example.com", password="pass123")
+        role_membership = Membership.objects.create(user=role_user, organization=organization)
+        dept_membership = Membership.objects.create(user=dept_user, organization=organization)
+
+        stages = [
+            {"name": "Etapa 1", "tasks": [
+                {"title": "Fechar balanco", "role": "Responsavel Fiscal", "department": str(department.id)},
+            ]},
+        ]
+        application = _make_application(
+            organization, client, stages,
+            role_mappings={
+                "Responsavel Fiscal": f"m-{role_membership.id}",
+                f"dept_{department.id}": f"m-{dept_membership.id}",
+            },
+        )
+
+        created = generate_tasks_from_application(application)
+
+        assert len(created) == 1
+        assert created[0].assigned_to_id == role_user
+
     def test_leaves_task_unassigned_when_no_mapping(self):
         organization = Organization.objects.create(name="Escritorio Teste")
         client = ClientCompany.objects.create(organization=organization, name="Cliente Teste")
